@@ -34,7 +34,7 @@ import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { Storage } from '../src/storage.js';
 import { loadConfig } from '../src/config.js';
-import { embed, isLlmAvailable } from '../src/llm.js';
+import { embed, isLlmAvailable, getLlmModelName } from '../src/llm.js';
 import { buildContextPrefix } from '../src/utils.js';
 import { search, selectRelevant } from '../src/search.js';
 import type { SmartMemoryConfig, SearchResult } from '../src/types.js';
@@ -481,7 +481,7 @@ async function main(): Promise<void> {
       config: {
         embeddingModel: process.env.SMART_MEMORY_EMBEDDING_MODEL ?? 'Xenova/all-MiniLM-L6-v2',
         useRerank: useRerank && isLlmAvailable(),
-        rerankModel: useRerank && isLlmAvailable() ? (process.env.ENGRAM_MODEL ?? 'default') : null,
+        rerankModel: useRerank && isLlmAvailable() ? getLlmModelName() : null,
         questionLimit: limit ?? null,
       },
       results: {

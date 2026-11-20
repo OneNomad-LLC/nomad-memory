@@ -9,8 +9,8 @@ import { DEFAULT_CONFIG } from './types.js';
  * Data stored under ~/.claude/przm-memory by default.
  * Override with PRZM_MEMORY_DATA_DIR (legacy: ENGRAM_DATA_DIR, SMART_MEMORY_DATA_DIR).
  *
- * LLM calls use OPENROUTER_API_KEY (for extraction, re-ranking).
- * Any model provider on openrouter.ai works.
+ * LLM calls (extraction, re-ranking) go to any OpenAI-compatible endpoint;
+ * see llm.ts for PRZM_MEMORY_LLM_BASE_URL / _API_KEY / _MODEL.
  * Mem0 uses MEM0_API_KEY (optional cloud extraction provider).
  */
 

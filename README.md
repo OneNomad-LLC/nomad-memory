@@ -420,7 +420,8 @@ Then point your MCP client at `dist/server.js`:
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `OPENROUTER_API_KEY` | (none) | Enables LLM extraction and reranking via [OpenRouter](https://openrouter.ai). Pick any model provider you want. Without it, the system uses heuristic extraction and keyword/vector search only. |
+| `PRZM_MEMORY_LLM_BASE_URL` | OpenRouter | Any OpenAI-compatible endpoint for LLM features: a local Ollama, LM Studio or vLLM server (no key needed), a provider's own OpenAI-compatible API, or a proxy. Legacy `ENGRAM_LLM_BASE_URL` also honored. |
+| `PRZM_MEMORY_LLM_API_KEY` | (none) | Key for that endpoint. `OPENROUTER_API_KEY` also works. With neither a key nor a custom endpoint, the system uses heuristic extraction and keyword/vector search only. |
 | `MEM0_API_KEY` | (none) | Enables Mem0 cloud extraction as a second opinion |
 | `ENGRAM_DATA_DIR` | `~/.claude/engram` | Where data gets stored |
 | `PRZM_MEMORY_EMBEDDING_MODEL` | `Xenova/bge-small-en-v1.5` | HuggingFace model for embeddings (legacy `ENGRAM_EMBEDDING_MODEL` also honored). After changing it, run `przm-memory-mcp reembed` — stored vectors stay in the old model's space until re-embedded, and the server warns at boot when they mismatch. |
@@ -428,7 +429,8 @@ Then point your MCP client at `dist/server.js`:
 | `PRZM_MEMORY_MAINTAIN_INTERVAL_HOURS` | `24` | Minimum hours between automatic consolidation passes. |
 | `PRZM_MEMORY_REDACT_SECRETS` | `1` | Set `0` to store text without redacting credentials (see [Secrets](#secrets)). |
 | `ENGRAM_DEVICE` | `cpu` | Embedding device: `cpu`, `dml` (DirectML), or `cuda` |
-| `ENGRAM_MODEL` | `anthropic/claude-haiku-4.5` | OpenRouter model ID for LLM features. Only used when `OPENROUTER_API_KEY` is set. Any model on [openrouter.ai](https://openrouter.ai) works. |
+| `PRZM_MEMORY_LLM_MODEL` | `anthropic/claude-haiku-4.5` | Model for LLM features, in the endpoint's naming (any model on [openrouter.ai](https://openrouter.ai) by default). Legacy `ENGRAM_MODEL` also honored. |
+| `PRZM_MEMORY_MODEL_DIR` | library default | Where the embedding model is cached. Without it the library's cache inside `node_modules` is used while writable, else `~/.cache/przm-memory/models`. The boot log prints the path in use. |
 | `STORAGE_BACKEND` | `file` | Storage backend: `file` (LanceDB + filesystem, default), `postgres` (self-hosted multi-tenant), or `cloud` (przm Cloud Pro). See below. |
 | `DATABASE_URL` | (none) | Postgres connection string. Required when `STORAGE_BACKEND=postgres`. |
 | `TENANT_ID` | (none) | Tenant identifier — every row in postgres is scoped by this. Required when `STORAGE_BACKEND=postgres`. |
@@ -791,7 +793,7 @@ This plugin contacts exactly two services:
 1. **HuggingFace Hub** for a one-time model download on first run (~34MB for the default bge-small), cached after that
 2. **Mem0 API**, only when `extractionProvider` is `mem0` or `both`
 
-If you set `OPENROUTER_API_KEY`, it contacts the OpenRouter API for LLM features (you pick the model provider). Without any API keys, everything runs fully local.
+If you set `PRZM_MEMORY_LLM_API_KEY` or `OPENROUTER_API_KEY`, it contacts OpenRouter for LLM features (you pick the model provider); with `PRZM_MEMORY_LLM_BASE_URL` it contacts that endpoint instead, which can be a model on your own machine. Without either, everything runs fully local.
 
 No telemetry. No analytics. No phoning home.
 

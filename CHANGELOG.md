@@ -25,6 +25,17 @@ The plan, with what was left out and why, is `docs/plans/nomadbot-learnings.md`.
   and the vector stage never saw it again short of a full `reembed`. Each maintenance pass now
   embeds up to 500 such memories before consolidating, never touching an existing vector, and
   reports the count as `embeddingsBackfilled`.
+- **Provider-agnostic LLM settings.** `PRZM_MEMORY_LLM_BASE_URL`, `PRZM_MEMORY_LLM_API_KEY`
+  and `PRZM_MEMORY_LLM_MODEL` name what they do; `ENGRAM_LLM_BASE_URL`, `OPENROUTER_API_KEY`
+  and `ENGRAM_MODEL` keep working. The endpoint was already swappable, but the key had to be
+  called `OPENROUTER_API_KEY` and the error sent everyone to OpenRouter. `isLlmAvailable()`
+  now agrees with the client: naming OpenRouter's URL without a key no longer reports an LLM
+  that every call then refuses. `getLlmModelName()` is exported.
+- **`PRZM_MEMORY_MODEL_DIR`** sets where the embedding model is cached. Without it the
+  library's cache inside `node_modules` is kept while writable (so existing caches keep
+  working) and `~/.cache/przm-memory/models` is used when it isn't, as on many global and
+  `npx` installs. The boot log printed `~/.cache/huggingface`, which was never where the model
+  went; it prints the real path now.
 
 ### Changed
 

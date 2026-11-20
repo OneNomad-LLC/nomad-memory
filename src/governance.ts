@@ -13,7 +13,7 @@ import { embed, llmComplete, isLlmAvailable } from './llm.js';
  * 3. Memory poisoning checks — flags suspicious content patterns
  *
  * All checks are advisory — they never block ingestion.
- * LLM-enhanced when OPENROUTER_API_KEY is set, heuristic fallback otherwise.
+ * LLM-enhanced when an LLM is configured (see llm.ts), heuristic fallback otherwise.
  */
 
 // ── Types ──────────────────────────────────────────────────────────

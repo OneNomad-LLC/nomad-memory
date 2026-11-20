@@ -696,7 +696,7 @@ server.registerTool(
           'reconsolidation (disabled)',
           'LLM knowledge-graph extraction (regex patterns only)',
         ],
-        llmHint: 'Set ENGRAM_LLM_BASE_URL (any OpenAI-compatible server, e.g. local Ollama) or OPENROUTER_API_KEY to enable.',
+        llmHint: 'Set PRZM_MEMORY_LLM_BASE_URL (any OpenAI-compatible server, e.g. local Ollama) or PRZM_MEMORY_LLM_API_KEY / OPENROUTER_API_KEY to enable.',
       }),
       embeddingModel: getEmbeddingModelName(),
       // Which model the stored vectors were embedded with, and whether a

@@ -1,13 +1,18 @@
 import OpenAI from 'openai';
+import { accessSync, mkdirSync, constants as fsConstants } from 'node:fs';
+import { homedir } from 'node:os';
+import { join } from 'node:path';
 import type { SmartMemoryConfig } from './types.js';
 
 /**
  * LLM provider for the MCP server.
  *
- * Completions: OpenRouter API (OpenAI-compatible) with OPENROUTER_API_KEY.
- *   Users can select any model available on openrouter.ai.
+ * Completions: any OpenAI-compatible endpoint. OpenRouter by default
+ *   (key in PRZM_MEMORY_LLM_API_KEY or OPENROUTER_API_KEY); point
+ *   PRZM_MEMORY_LLM_BASE_URL (legacy ENGRAM_LLM_BASE_URL) at Ollama,
+ *   LM Studio, vLLM, a provider's own OpenAI-compatible API or a proxy.
  *   Default model: anthropic/claude-haiku-4.5 (fast, cheap).
- *   Override with ENGRAM_MODEL env var.
+ *   Override with PRZM_MEMORY_LLM_MODEL (legacy ENGRAM_MODEL).
  *
  * Embeddings: Local ONNX model via @huggingface/transformers.
  *   Default model: Xenova/bge-small-en-v1.5 (384-dim, ~34 MB, cached after first use).
@@ -25,22 +30,37 @@ import type { SmartMemoryConfig } from './types.js';
 
 let _client: OpenAI | null = null;
 
+const OPENROUTER_BASE_URL = 'https://openrouter.ai/api/v1';
+
+/**
+ * Where completions go and with what key, or null when no LLM is configured. A custom base URL
+ * needs no key: local servers usually don't check one, but the OpenAI SDK insists on a value.
+ */
+function resolveLlmEndpoint(): { baseURL: string; apiKey: string } | null {
+  const baseURL = process.env.PRZM_MEMORY_LLM_BASE_URL ?? process.env.ENGRAM_LLM_BASE_URL ?? OPENROUTER_BASE_URL;
+  const apiKey = process.env.PRZM_MEMORY_LLM_API_KEY
+    ?? process.env.OPENROUTER_API_KEY
+    ?? (baseURL !== OPENROUTER_BASE_URL ? 'local' : undefined);
+  return apiKey ? { baseURL, apiKey } : null;
+}
+
 function getClient(): OpenAI | null {
   if (_client) return _client;
-  // ENGRAM_LLM_BASE_URL lets users point at any OpenAI-compatible
-  // server (Ollama, LM Studio, llama.cpp, vLLM, a self-hosted proxy).
-  // When set, OPENROUTER_API_KEY can be any non-empty string — local
-  // servers usually don't check it, but the OpenAI SDK insists on one.
-  const baseURL = process.env.ENGRAM_LLM_BASE_URL ?? 'https://openrouter.ai/api/v1';
-  const isLocal = baseURL !== 'https://openrouter.ai/api/v1';
-  const apiKey = process.env.OPENROUTER_API_KEY ?? (isLocal ? 'local' : undefined);
-  if (!apiKey) return null;
-  _client = new OpenAI({ baseURL, apiKey });
+  const endpoint = resolveLlmEndpoint();
+  if (!endpoint) return null;
+  _client = new OpenAI(endpoint);
   return _client;
 }
 
 export function isLlmAvailable(): boolean {
-  return !!process.env.OPENROUTER_API_KEY || !!process.env.ENGRAM_LLM_BASE_URL;
+  return resolveLlmEndpoint() !== null;
+}
+
+export function getLlmModelName(): string {
+  return process.env.PRZM_MEMORY_LLM_MODEL
+    ?? process.env.ENGRAM_MODEL
+    ?? process.env.SMART_MEMORY_MODEL
+    ?? 'anthropic/claude-haiku-4.5';
 }
 
 export async function llmComplete(
@@ -52,14 +72,14 @@ export async function llmComplete(
   const client = getClient();
   if (!client) {
     throw new Error(
-      'OPENROUTER_API_KEY is required for LLM-powered features (extraction, re-ranking, procedural rules). ' +
-      'Get one at https://openrouter.ai/keys -- any model provider works.'
+      'No LLM configured for LLM-powered features (extraction, re-ranking, procedural rules). ' +
+      'Set PRZM_MEMORY_LLM_BASE_URL to any OpenAI-compatible endpoint (a local Ollama needs no key), ' +
+      'or PRZM_MEMORY_LLM_API_KEY / OPENROUTER_API_KEY for OpenRouter.'
     );
   }
 
-  const model = process.env.ENGRAM_MODEL ?? process.env.SMART_MEMORY_MODEL ?? 'anthropic/claude-haiku-4.5';
   const response = await client.chat.completions.create({
-    model,
+    model: getLlmModelName(),
     max_tokens: opts?.maxTokens ?? 1000,
     temperature: opts?.temperature ?? 0,
     messages: [
@@ -221,16 +241,40 @@ function makeProgressReporter(): (progress: unknown) => void {
   };
 }
 
+/**
+ * Where the embedding model is cached. `PRZM_MEMORY_MODEL_DIR` wins. Otherwise the library's
+ * default (inside node_modules) is kept while it is writable, so an existing cache keeps
+ * working; a global or npx install often can't write there, and the download then fails or
+ * stalls, so it falls back to ~/.cache/przm-memory/models.
+ */
+export function resolveModelCacheDir(libraryDefault: string): string {
+  const override = process.env.PRZM_MEMORY_MODEL_DIR;
+  if (override) {
+    mkdirSync(override, { recursive: true });
+    return override;
+  }
+  try {
+    mkdirSync(libraryDefault, { recursive: true });
+    accessSync(libraryDefault, fsConstants.W_OK);
+    return libraryDefault;
+  } catch {
+    const fallback = join(homedir(), '.cache', 'przm-memory', 'models');
+    mkdirSync(fallback, { recursive: true });
+    return fallback;
+  }
+}
+
 async function getExtractor(): Promise<ExtractorFn> {
   if (_extractor) return _extractor;
 
   if (!_extractorLoading) {
     _extractorLoading = (async () => {
-      const { pipeline } = await import('@huggingface/transformers');
+      const { pipeline, env } = await import('@huggingface/transformers');
       const modelName = getEmbeddingModelName();
       const device = getDevice();
+      if (env.cacheDir) env.cacheDir = resolveModelCacheDir(env.cacheDir);
       console.error(`przm-memory: loading embedding model ${modelName} (device: ${device})...`);
-      console.error(`przm-memory: first-time setup downloads the model once, then caches at ~/.cache/huggingface`);
+      console.error(`przm-memory: first-time setup downloads the model once, then caches at ${env.cacheDir}`);
       const progress_callback = makeProgressReporter();
       const loaded = await pipeline('feature-extraction', modelName, { device, progress_callback } as never);
       _extractor = loaded as unknown as ExtractorFn;
