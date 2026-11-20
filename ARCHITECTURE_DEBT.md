@@ -463,3 +463,48 @@ a closed 15-predicate vocabulary runs batched in maintenance with a
 one-shot backfill; ingest-time taxonomy normalization plus a
 conservative variant-merge pass; maintenance writes a daily diary
 digest; handoff stamps no longer collide within the same second.
+
+---
+
+## Resolved (2026-11-20) — Lessons from a production deployment
+
+A memory system built on this repo's ideas ran in production and found four failures this
+repo shared. Plan and reasoning: `docs/plans/nomadbot-learnings.md`.
+
+- **Overlapping maintenance.** Every session's server ran maintenance at boot when overdue,
+  so sessions opened together processed the same rows twice. One run at a time now: shared
+  in-process, a `maintenance.lock` across processes, taken over when its owner is gone.
+- **Embeddings that fell behind.** A chunk ingested while the model couldn't load was stored
+  without a vector forever. Maintenance embeds up to 500 a pass.
+- **Unwritable model cache.** The library caches inside `node_modules`; `PRZM_MEMORY_MODEL_DIR`
+  and a home-directory fallback cover installs that can't write there.
+- **OpenRouter-only naming.** The endpoint was already swappable; the key, model and error
+  message now say so (`PRZM_MEMORY_LLM_*`), and `isLlmAvailable()` agrees with the client.
+
+Also closed: recall's reconsolidation rewrote `origin: user` memories, which the origin model
+forbids everywhere else.
+
+---
+
+## DEBT-022 — Memories have no validity window; contradictions are advisory
+
+**Where:** `src/types.ts` (`MemoryChunk`), `src/governance.ts` (`detectContradictions`),
+`src/knowledge-graph.ts`.
+
+**Choice:** A chunk has `createdAt` and nothing else about time. When a new memory contradicts
+an old one, both stay current; `detectContradictions` reports the pair and does nothing.
+KG triples do carry `validFrom`/`validTo` and `replaceTriple` closes the old one, but
+`validFrom` is always the write time and nothing records which triple replaced which.
+
+**Why:** Closing a memory off safely needs `valid_from`, `valid_to` and `superseded_by` on
+chunks across three backends, plus every reader learning which rows are current. Without
+those columns, automatic supersession would be a delete. The benchmarks we run measure
+retrieval, where returning both the old and the new memory is correct.
+
+**What hurts:** An agent reading "uses vim" and "switched to emacs" has to work out which is
+current from dates alone. Knowledge-update answers depend on the model noticing.
+
+**Revisit when:** answer accuracy (not just R@K) is measured, or a user reports a stale fact
+winning. When callers can set `validFrom`, close a superseded fact no earlier than its own
+start: a fact that begins in the future must not end before it begins (the production
+deployment shipped exactly that bug).
