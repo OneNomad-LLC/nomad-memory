@@ -9,6 +9,7 @@ import { llmExtractAndPersist } from './kg-extractor.js';
 import { isLlmAvailable } from './llm.js';
 import { writeDiaryEntry, listDiaryDates } from './diary.js';
 import { normalizeDomain, normalizeTaxonomyValue } from './utils.js';
+import { embedMissing } from './reembed.js';
 
 type SyncStats = Awaited<ReturnType<typeof syncBridge>>;
 
@@ -41,6 +42,8 @@ export interface MaintenanceResult extends ConsolidationStats {
   kgTriplesExtracted: number;
   diaryDigestWritten: boolean;
   taxonomyRewritten: number;
+  /** Chunks that had no vector and were embedded this pass. */
+  embeddingsBackfilled: number;
 }
 
 const STATE_FILE = 'maintenance.json';
@@ -363,6 +366,12 @@ async function maintain(
   config: SmartMemoryConfig,
   storage: Storage
 ): Promise<MaintenanceResult> {
+  // Before consolidation, so chunks that missed their vector can be linked and merged too.
+  let embeddingsBackfilled = 0;
+  try {
+    embeddingsBackfilled = await embedMissing(config, storage);
+  } catch { /* best-effort */ }
+
   const stats = await consolidate(storage, config);
 
   let bridge: SyncStats = { exported: 0, imported: 0, reinforced: 0, conflicts: 0 };
@@ -387,5 +396,5 @@ async function maintain(
   state.lastRunAt = new Date().toISOString();
   writeMaintenanceState(config.dataDir, state);
 
-  return { ...stats, bridge, rulesBackfilled, kgTriplesExtracted, diaryDigestWritten, taxonomyRewritten };
+  return { ...stats, bridge, rulesBackfilled, kgTriplesExtracted, diaryDigestWritten, taxonomyRewritten, embeddingsBackfilled };
 }

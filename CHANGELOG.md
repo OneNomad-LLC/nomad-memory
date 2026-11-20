@@ -20,6 +20,11 @@ The plan, with what was left out and why, is `docs/plans/nomadbot-learnings.md`.
   and digits, not a placeholder), so `apiKey: string` and `password="your_password"` survive:
   over the LongMemEval haystack's 199,509 turns the pass fires on 5, all real-looking tokens.
   `PRZM_MEMORY_REDACT_SECRETS=0` turns it off.
+- **Maintenance catches up missing embeddings.** When the embedding model can't load (no
+  network on first run, a cache it can't write), ingest stores the memory without a vector
+  and the vector stage never saw it again short of a full `reembed`. Each maintenance pass now
+  embeds up to 500 such memories before consolidating, never touching an existing vector, and
+  reports the count as `embeddingsBackfilled`.
 
 ### Changed
 
