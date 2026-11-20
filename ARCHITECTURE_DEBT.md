@@ -469,7 +469,7 @@ digest; handoff stamps no longer collide within the same second.
 ## Resolved (2026-11-20) — Lessons from a production deployment
 
 A memory system built on this repo's ideas ran in production and found four failures this
-repo shared. Plan and reasoning: `docs/plans/nomadbot-learnings.md`.
+repo shared. Plan and reasoning: `docs/plans/production-memory-lessons.md`.
 
 - **Overlapping maintenance.** Every session's server ran maintenance at boot when overdue,
   so sessions opened together processed the same rows twice. One run at a time now: shared

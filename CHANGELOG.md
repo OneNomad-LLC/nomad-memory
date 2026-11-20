@@ -8,7 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 Lessons from a production deployment of a memory system that started from this repo's ideas.
-The plan, with what was left out and why, is `docs/plans/nomadbot-learnings.md`.
+The plan, with what was left out and why, is `docs/plans/production-memory-lessons.md`.
 
 ### Added
 
