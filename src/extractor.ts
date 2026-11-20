@@ -286,6 +286,8 @@ export async function reconsolidate(
 ): Promise<void> {
   // Reconsolidation requires LLM -- skip if unavailable
   if (!isLlmAvailable()) return;
+  // User-asserted text is canonical: consolidation never rewrites it, and neither does recall.
+  if (chunk.origin === 'user') return;
 
   if (chunk.lastRecalledAt) {
     const elapsed = Date.now() - new Date(chunk.lastRecalledAt).getTime();

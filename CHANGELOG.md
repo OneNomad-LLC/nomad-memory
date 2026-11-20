@@ -5,6 +5,18 @@ All notable changes to `@onenomad/przm-memory` are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+Lessons from a production deployment of a memory system that started from this repo's ideas.
+The plan, with what was left out and why, is `docs/plans/nomadbot-learnings.md`.
+
+### Fixed
+
+- **Recall no longer rewrites user memories.** Reconsolidation rewrote a recalled memory's
+  text with the LLM whatever its origin, so a correction the user wrote could come back in a
+  model's words after a `helpful` outcome. Consolidation already refused to merge, rewrite or
+  demote `origin: user` memories; recall now refuses too.
+
 ## [1.6.0] - 2026-09-14
 
 Found by running Claude Code under two config directories on one machine. A
