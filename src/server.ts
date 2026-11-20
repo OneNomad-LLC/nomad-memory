@@ -15,6 +15,8 @@ import { isLlmAvailable, warmEmbeddings, getEmbeddingModelName, getEmbeddingMode
 import { checkEmbeddingMeta, readEmbeddingMeta } from './reembed.js';
 import {
   runMaintenance,
+  runMaintenanceIfOverdue,
+  MaintenanceBusyError,
   maintenanceOverdue,
   autoMaintainEnabled,
   maintainIntervalMs,
@@ -557,8 +559,15 @@ server.registerTool(
   },
   async () => {
     const storage = await ensureStorage();
-    const result = await runMaintenance(config, storage);
-    return json({ action: 'consolidation', ...result });
+    try {
+      const result = await runMaintenance(config, storage);
+      return json({ action: 'consolidation', ...result });
+    } catch (err) {
+      if (err instanceof MaintenanceBusyError) {
+        return json({ error: 'maintenance_running', detail: `${err.message}; try again when it finishes.` });
+      }
+      throw err;
+    }
   }
 );
 
@@ -1566,13 +1575,15 @@ function scheduleAutoMaintenance(): void {
     if (!maintenanceOverdue(config.dataDir)) return;
     try {
       const storage = await ensureStorage();
-      const result = await runMaintenance(config, storage);
+      const result = await runMaintenanceIfOverdue(config, storage);
+      if (!result) return;
       console.error(
         `przm-memory: auto-maintenance done — promoted ${result.promoted}, decayed ${result.decayed}, ` +
         `merged ${result.merged}, linked ${result.linked}` +
         (result.rulesBackfilled > 0 ? `, rule backfill over ${result.rulesBackfilled} chunks` : '')
       );
     } catch (err) {
+      if (err instanceof MaintenanceBusyError) return; // another session is doing it
       console.error('przm-memory: auto-maintenance failed (will retry next interval):', err);
     }
   };

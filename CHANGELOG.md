@@ -39,6 +39,14 @@ The plan, with what was left out and why, is `docs/plans/nomadbot-learnings.md`.
   text with the LLM whatever its origin, so a correction the user wrote could come back in a
   model's words after a `helpful` outcome. Consolidation already refused to merge, rewrite or
   demote `origin: user` memories; recall now refuses too.
+- **One maintenance run at a time.** Every Claude Code session starts its own server on the
+  same data directory, and each one ran maintenance at boot when it was overdue, so two
+  sessions opened together decayed, promoted and merged the same memories twice;
+  `memory-maintain` could also overlap the timer in one process. Callers in one process now
+  share the run in flight, and a `maintenance.lock` file in the data directory keeps other
+  processes out. A lock whose process is gone, or that is over an hour old, is taken over. The
+  scheduler checks "overdue" again once it holds the lock, so the second session skips.
+  `memory-maintain` answers `maintenance_running` while another process holds it.
 
 ## [1.6.0] - 2026-09-14
 

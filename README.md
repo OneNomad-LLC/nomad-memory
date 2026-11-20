@@ -424,7 +424,7 @@ Then point your MCP client at `dist/server.js`:
 | `MEM0_API_KEY` | (none) | Enables Mem0 cloud extraction as a second opinion |
 | `ENGRAM_DATA_DIR` | `~/.claude/engram` | Where data gets stored |
 | `PRZM_MEMORY_EMBEDDING_MODEL` | `Xenova/bge-small-en-v1.5` | HuggingFace model for embeddings (legacy `ENGRAM_EMBEDDING_MODEL` also honored). After changing it, run `przm-memory-mcp reembed` — stored vectors stay in the old model's space until re-embedded, and the server warns at boot when they mismatch. |
-| `PRZM_MEMORY_AUTO_MAINTAIN` | `1` | Set `0` to disable the automatic consolidation pass (runs ~20s after boot when the last run is older than the interval). |
+| `PRZM_MEMORY_AUTO_MAINTAIN` | `1` | Set `0` to disable the automatic consolidation pass (runs ~20s after boot when the last run is older than the interval). One pass runs at a time across every session sharing the data directory (`maintenance.lock`). |
 | `PRZM_MEMORY_MAINTAIN_INTERVAL_HOURS` | `24` | Minimum hours between automatic consolidation passes. |
 | `PRZM_MEMORY_REDACT_SECRETS` | `1` | Set `0` to store text without redacting credentials (see [Secrets](#secrets)). |
 | `ENGRAM_DEVICE` | `cpu` | Embedding device: `cpu`, `dml` (DirectML), or `cuda` |

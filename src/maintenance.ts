@@ -1,4 +1,4 @@
-import { readFileSync, writeFileSync, existsSync } from 'node:fs';
+import { readFileSync, writeFileSync, existsSync, unlinkSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 import type { SmartMemoryConfig } from './types.js';
 import { Storage } from './storage.js';
@@ -257,7 +257,109 @@ async function writeDiaryDigest(config: SmartMemoryConfig, storage: Storage): Pr
  * memory-maintain tool and the auto scheduler so both paths stay
  * identical.
  */
-export async function runMaintenance(
+export function runMaintenance(
+  config: SmartMemoryConfig,
+  storage: Storage
+): Promise<MaintenanceResult> {
+  return runExclusive(config, storage, false) as Promise<MaintenanceResult>;
+}
+
+/**
+ * The scheduler's entry point: takes the lock, then checks "overdue" again, so the second of
+ * two sessions booting together finds the first one's fresh stamp and does nothing. Null when
+ * there was nothing to do; throws MaintenanceBusyError when another process is mid-run.
+ */
+export function runMaintenanceIfOverdue(
+  config: SmartMemoryConfig,
+  storage: Storage
+): Promise<MaintenanceResult | null> {
+  return runExclusive(config, storage, true);
+}
+
+/** Another process holds the maintenance lock. */
+export class MaintenanceBusyError extends Error {
+  constructor(holder: string) {
+    super(`maintenance is already running (${holder})`);
+    this.name = 'MaintenanceBusyError';
+  }
+}
+
+const LOCK_FILE = 'maintenance.lock';
+/** A lock this old was left by a run that died without cleaning up. */
+const LOCK_STALE_MS = 3_600_000;
+let inFlight: Promise<MaintenanceResult | null> | null = null;
+
+/**
+ * One maintenance run at a time. Every Claude Code session starts its own server on the same
+ * data directory and each runs maintenance at boot when it is overdue; two overlapping runs
+ * decay, promote and merge the same rows twice. In one process, callers share the run in
+ * flight. Across processes, a lock file in the data directory decides; a lock whose process is
+ * gone, or that is older than an hour, is taken over.
+ */
+async function runExclusive(
+  config: SmartMemoryConfig,
+  storage: Storage,
+  onlyIfOverdue: boolean
+): Promise<MaintenanceResult | null> {
+  while (inFlight) {
+    const shared = await inFlight;
+    // A scheduler pass that found nothing overdue is no answer to an explicit request.
+    if (shared || onlyIfOverdue) return shared;
+  }
+  const run = (async () => {
+    const lockPath = join(config.dataDir, LOCK_FILE);
+    acquireLock(lockPath);
+    try {
+      if (onlyIfOverdue && !maintenanceOverdue(config.dataDir)) return null;
+      return await maintain(config, storage);
+    } finally {
+      try { unlinkSync(lockPath); } catch { /* already gone */ }
+    }
+  })();
+  inFlight = run;
+  const clear = () => { if (inFlight === run) inFlight = null; };
+  run.then(clear, clear);
+  return await run;
+}
+
+function acquireLock(lockPath: string): void {
+  for (let attempt = 0; attempt < 2; attempt++) {
+    try {
+      writeFileSync(lockPath, JSON.stringify({ pid: process.pid, at: new Date().toISOString() }), { flag: 'wx', mode: 0o600 });
+      return;
+    } catch (err) {
+      if ((err as NodeJS.ErrnoException).code !== 'EEXIST') throw err;
+    }
+    const holder = readLockHolder(lockPath);
+    if (holder && !holder.stale) throw new MaintenanceBusyError(`pid ${holder.pid}`);
+    try { unlinkSync(lockPath); } catch { /* raced with its owner's cleanup */ }
+  }
+  throw new MaintenanceBusyError('lock contended');
+}
+
+function readLockHolder(lockPath: string): { pid: number; stale: boolean } | null {
+  try {
+    const { pid, at } = JSON.parse(readFileSync(lockPath, 'utf-8'));
+    const old = Date.now() - new Date(at).getTime() > LOCK_STALE_MS;
+    return { pid, stale: old || !processAlive(pid) };
+  } catch {
+    // Unreadable: mid-write by its owner, or corrupt. Corrupt locks age out by mtime.
+    try { return { pid: 0, stale: Date.now() - statSync(lockPath).mtimeMs > LOCK_STALE_MS }; } catch { return null; }
+  }
+}
+
+function processAlive(pid: number): boolean {
+  if (!Number.isInteger(pid) || pid <= 0) return false;
+  if (pid === process.pid) return true;
+  try {
+    process.kill(pid, 0);
+    return true;
+  } catch (err) {
+    return (err as NodeJS.ErrnoException).code === 'EPERM';
+  }
+}
+
+async function maintain(
   config: SmartMemoryConfig,
   storage: Storage
 ): Promise<MaintenanceResult> {
