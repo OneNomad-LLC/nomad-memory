@@ -49,6 +49,13 @@ The plan, with what was left out and why, is `docs/plans/production-memory-lesso
   heuristic paths; `memory-ingest` still only warns, because an explicit write is the
   caller's call.
 
+### Removed
+
+- **LoCoMo.** Its runner, its published results and every LoCoMo number in the docs are
+  gone. Around 6% of its gold answers are wrong, its conversations fit in a model's context
+  window (so a full-context baseline beats memory systems), and abstention goes unscored, so
+  its scores no longer tell anyone how well memory works.
+
 ### Fixed
 
 - **Recall no longer rewrites user memories.** Reconsolidation rewrote a recalled memory's

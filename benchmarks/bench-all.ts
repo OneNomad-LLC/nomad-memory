@@ -8,12 +8,12 @@
  * benchmarks/results/. The aggregator captures the most-recent file
  * per benchmark and stitches them together for the final summary.
  *
- * Skips benchmarks whose dataset is missing (LoCoMo, LongMemEval) and
+ * Skips benchmarks whose dataset is missing (LongMemEval) and
  * reports the skip rather than failing — partial runs are valid.
  *
  * Usage:
  *   npm run bench:all
- *   npm run bench:all -- --skip locomo,longmemeval     # operational only
+ *   npm run bench:all -- --skip longmemeval     # operational only
  *   npm run bench:all -- --only bench,query-latency    # specific set
  */
 
@@ -37,12 +37,6 @@ const SPECS: BenchSpec[] = [
   { name: 'engram-synthetic', script: 'bench.ts' },
   { name: 'ingest-throughput', script: 'ingest-throughput.ts' },
   { name: 'query-latency', script: 'query-latency.ts' },
-  {
-    name: 'locomo',
-    script: 'locomo.ts',
-    datasetCheck: join(HERE, 'data', 'locomo', 'data', 'locomo10.json'),
-    datasetHint: 'bash benchmarks/download-datasets.sh locomo',
-  },
   {
     name: 'longmemeval',
     script: 'longmemeval.ts',

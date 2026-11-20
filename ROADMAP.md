@@ -70,8 +70,8 @@ calling Haiku with 200-character truncated docs. That's a different
 cost class from cross-encoder reranking (~50ms CPU per top-30 vs
 ~2000ms LLM). NDCG@10 = 0.875 with R@10 = 0.988 on LongMemEval is
 exactly the "found but not first" failure shape that cross-encoders
-fix. Predicted lift: +5 to +10pp on LoCoMo temporal-inference (74.0%
-R@10 today). Total p50 latency goes from 44ms → ~100ms.
+fix. Measure it on LongMemEval S and M (NDCG@10, recall_all@5) and
+BEAM. Total p50 latency goes from 44ms → ~100ms.
 
 **Approach:** Wire the stub to use `bge-reranker-v2-m3` or
 `mxbai-rerank-large-v1`. Rerank top-30 after candidate scoring. Bench
@@ -95,14 +95,15 @@ no improvement" with the test details).
 same data, the dense+graph+spreading apparatus's value-add is
 literally unmeasured. The README's "no benchmark-specific tuning"
 claim cannot be verified without OOD evidence — meanwhile at least
-five LoCoMo-tuned constants exist in the pipeline.
+five constants tuned on a benchmark this project no longer uses exist
+in the pipeline.
 
 **Approach:** Wire `bm25` (npm) or call Pyserini in the bench harness.
-Run on LoCoMo R@10 and three BEIR datasets (TREC-COVID, SCIDOCS,
-FiQA). Commit results to `benchmarks/results/published/`. If
-tuned-BM25 hits within 5pp of przm on LoCoMo, the README's framing
-needs to soften to "tuned against LoCoMo and LongMemEval; OOD
-performance measured below."
+Run on LongMemEval S and M and three BEIR datasets (TREC-COVID,
+SCIDOCS, FiQA). Commit results to `benchmarks/results/published/`. If
+tuned-BM25 hits within 5pp of przm on LongMemEval, the README's framing
+needs to soften to "tuned against LongMemEval; OOD performance
+measured below."
 
 **Effort:** M (annotation-free; mostly harness work).
 
@@ -167,7 +168,7 @@ Unblocks web embedding and the prosumer tier.
 ### R-018 — Publish a memory-benchmark methodology standard
 
 A blog post / methodology spec: "How to compare AI memory systems
-honestly." Side-by-side LoCoMo R@10 vs LLM-judge with the
+honestly." Side-by-side retrieval recall vs graded QA accuracy with the
 methodology caveats spelled out. Force competitors to disclose their
 grading prompts and dropped categories. Get one independent
 third-party (Vectorize.io or OSS Insight) to validate the R@K
@@ -265,8 +266,8 @@ load-bearing part.
 - **Source connectors** (Notion, GDrive, Slack, Gmail). Cortex's job.
   Adding them here collapses the suite story.
 - **Project / people taxonomy / ontology.** Same.
-- **LLM listwise reranker.** Already proven harmful on LoCoMo
-  (DEBT-009). The cross-encoder rerank in R-010 is a different
+- **LLM listwise reranker.** Measured harmful (DEBT-009), though on a
+  benchmark since dropped; re-test before reversing. The cross-encoder rerank in R-010 is a different
   decision and should be evaluated on its own merits.
 - **Speculative embedding-model abstraction** beyond the planned bge
   swap. Wait for the pull (DEBT-008). Document the dim-coupling risk

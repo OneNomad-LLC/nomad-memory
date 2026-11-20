@@ -242,7 +242,8 @@ survives only for the benchmark harnesses that call it explicitly.
 ships without an LLM reranker.
 
 **Choice:** Per `docs/benchmark-optimization.md`, LLM reranking was
-*actively harmful* on this pipeline against LoCoMo. We left the file
+*actively harmful* on this pipeline against LoCoMo (no longer used as
+evidence; re-test on LongMemEval before relying on it). We left the file
 in place so it's easy to bring back, but no rerank runs in production.
 
 **Why:** Cost (LLM call per query), latency (~500-2000ms), and the

@@ -67,8 +67,8 @@ export interface IngestEntry {
   createdAt?: string;
   /**
    * When true, skip the per-chunk KG triple extraction. The standalone
-   * locomo bench bypasses this (calls saveChunk directly, never enters
-   * wal.ts), which is why its wall-clock is ~50× faster than przm's
+   * benchmark harnesses bypass this (they call saveChunk directly, never enter
+   * wal.ts), which is why their wall-clock is ~50× faster than przm's
    * MCP-boundary bench on the same dataset.
    *
    * Real users keep KG extraction (it powers engram-dossier,
@@ -335,7 +335,7 @@ export async function ingest(
   // Per-batch side effects. Both opt-out via flags on any entry in
   // the batch (typical: engram-ingest calls ingest() with one entry,
   // so a single flag controls the path). Benchmark harnesses set
-  // these to match what engram/benchmarks/locomo.ts does — its
+  // these to match what the standalone harnesses do — their
   // direct-saveChunk path skips both, which is the source of the
   // ~50× wall-clock gap between standalone and MCP-boundary benches.
   const skipDaily = entries.some(e => e.skipDailyEntry);

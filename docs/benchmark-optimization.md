@@ -1,5 +1,9 @@
 # Benchmark Optimization Report
 
+> **Historical.** Every number here was measured on LoCoMo, which this project no longer
+> uses as evidence (see CHANGELOG, Unreleased). The root-cause analysis of the regression is
+> still accurate; the scores are not current and should not be cited.
+
 **Date:** April 2026
 **Benchmark:** [LoCoMo](https://github.com/snap-research/locomo) (1,986 QA pairs, 10 long conversations)
 **Metric:** Recall@K (is the correct evidence session in the top K results?)
