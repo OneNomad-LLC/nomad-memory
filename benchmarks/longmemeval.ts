@@ -43,6 +43,7 @@ await runRetrievalBenchmark({
     'Session level: evidence = answer_session_ids, one item per session, first 2,000 characters embedded. ' +
     'Turn level: evidence = turns marked has_answer, one item per turn; questions with no such turn excluded. ' +
     'One fresh store per question holding only its haystack. Runs executed on one machine, possibly concurrently with other runs.',
+  extra: () => ({ excludedNoEvidence: excluded }),
   runOnce: async () => {
     const outcomes: QueryOutcome[] = [];
     const writeMs: number[] = [];

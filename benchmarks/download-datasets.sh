@@ -1,102 +1,92 @@
 #!/usr/bin/env bash
-# Engram benchmark dataset downloader.
+# przm-memory benchmark dataset downloader.
 #
-# Fetches the public datasets used by the benchmark suite into
-# benchmarks/data/. Idempotent — re-running skips anything already
-# downloaded. Safe to abort and resume.
+# Fetches the open datasets the benchmark suite uses into benchmarks/data/.
+# Idempotent: anything already on disk is skipped. Safe to abort and resume.
 #
 # Datasets:
-#   * LongMemEval   https://huggingface.co/datasets/xiaowu0162/longmemeval-cleaned
+#   lme     LongMemEval S, cleaned (~265 MB, MIT)
+#           https://huggingface.co/datasets/xiaowu0162/longmemeval-cleaned
+#   lme-m   LongMemEval M, cleaned (~2.7 GB, MIT)
+#   beam    BEAM 100K/500K/1M chats and probing questions (code MIT, data CC BY-SA 4.0)
+#           https://github.com/mohammadtavakoli78/BEAM
+#   mab     MemoryAgentBench Conflict_Resolution and Accurate_Retrieval (MIT)
+#           https://huggingface.co/datasets/ai-hyz/MemoryAgentBench
 #
 # Usage:
-#   bash benchmarks/download-datasets.sh           # download everything missing
-#   bash benchmarks/download-datasets.sh --force   # re-download everything
-#   bash benchmarks/download-datasets.sh lme       # download only LongMemEval
+#   bash benchmarks/download-datasets.sh              # lme, beam, mab (not the 2.7 GB lme-m)
+#   bash benchmarks/download-datasets.sh lme-m beam   # just these
+#   bash benchmarks/download-datasets.sh --force lme  # re-download
 #
 # Requires: curl.
 
 set -euo pipefail
 
-# Resolve the script's directory so this works no matter where it's invoked.
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 DATA_DIR="${SCRIPT_DIR}/data"
 
-# ── Args ──────────────────────────────────────────────────────────────
 FORCE=0
 TARGETS=()
 for arg in "$@"; do
   case "$arg" in
     --force|-f) FORCE=1 ;;
-    lme|longmemeval) TARGETS+=("$arg") ;;
-    -h|--help)
-      sed -n '2,20p' "$0"
-      exit 0
-      ;;
+    lme|longmemeval) TARGETS+=("lme") ;;
+    lme-m|beam|mab) TARGETS+=("$arg") ;;
+    -h|--help) sed -n '2,22p' "$0"; exit 0 ;;
     *) echo "Unknown argument: $arg" >&2; exit 2 ;;
   esac
 done
-
-if [ "${#TARGETS[@]}" -eq 0 ]; then
-  TARGETS=("lme")
-fi
+[ "${#TARGETS[@]}" -eq 0 ] && TARGETS=("lme" "beam" "mab")
 
 mkdir -p "$DATA_DIR"
-
-want() {
-  for t in "${TARGETS[@]}"; do
-    if [ "$t" = "$1" ] || { [ "$1" = "lme" ] && [ "$t" = "longmemeval" ]; }; then
-      return 0
-    fi
-  done
-  return 1
-}
-
 log() { printf "[download-datasets] %s\n" "$*"; }
 err() { printf "[download-datasets] ERROR: %s\n" "$*" >&2; }
 
-# ── LongMemEval ───────────────────────────────────────────────────────
-# Downloaded as a single ~277 MB JSON from the cleaned mirror on
-# Hugging Face. The original (xiaowu0162) repo is the source the
-# longmemeval benchmark already references.
-download_lme() {
-  local file="${DATA_DIR}/longmemeval_s_cleaned.json"
-  local url="https://huggingface.co/datasets/xiaowu0162/longmemeval-cleaned/resolve/main/longmemeval_s_cleaned.json"
-
-  if [ -f "$file" ] && [ "$FORCE" -eq 0 ]; then
-    log "LongMemEval already present at ${file} — skipping"
-    return 0
+# fetch URL FILE: download to FILE unless present (or --force), atomically.
+fetch() {
+  local url="$1" file="$2"
+  if [ -f "$file" ] && [ "$FORCE" -eq 0 ]; then return 0; fi
+  mkdir -p "$(dirname "$file")"
+  if ! curl -fsSL --retry 3 --retry-delay 2 -o "${file}.partial" "$url"; then
+    rm -f "${file}.partial"; err "failed: $url"; return 1
   fi
-
-  log "Downloading LongMemEval (~277 MB) to ${file}"
-  if ! curl -fL --retry 3 --retry-delay 2 -o "${file}.partial" "$url"; then
-    err "curl failed — check network and try again"
-    rm -f "${file}.partial"
-    return 1
-  fi
-
   mv "${file}.partial" "$file"
-  log "LongMemEval ready at ${file}"
 }
 
-# ── Run ───────────────────────────────────────────────────────────────
-STATUS_LME="skipped"
+LME_BASE="https://huggingface.co/datasets/xiaowu0162/longmemeval-cleaned/resolve/main"
+download_lme()   { log "LongMemEval S";  fetch "$LME_BASE/longmemeval_s_cleaned.json" "$DATA_DIR/longmemeval_s_cleaned.json"; }
+download_lme_m() { log "LongMemEval M (2.7 GB)"; fetch "$LME_BASE/longmemeval_m_cleaned.json" "$DATA_DIR/longmemeval_m_cleaned.json"; }
 
-if want lme; then
-  if download_lme; then STATUS_LME="ok"; else STATUS_LME="failed"; fi
-fi
+download_mab() {
+  log "MemoryAgentBench"
+  local base="https://huggingface.co/datasets/ai-hyz/MemoryAgentBench/resolve/main/data"
+  for split in Conflict_Resolution Accurate_Retrieval; do
+    fetch "$base/${split}-00000-of-00001.parquet" "$DATA_DIR/mab/${split}.parquet" || return 1
+  done
+}
 
-# ── Summary ───────────────────────────────────────────────────────────
-echo
-echo "─────────────────────────────────────────────────"
-echo " Engram benchmark datasets"
-echo "─────────────────────────────────────────────────"
-printf " LongMemEval   %s\n" "$STATUS_LME"
-echo "─────────────────────────────────────────────────"
-echo " Data root:    ${DATA_DIR}"
-echo
-echo " Next:         npm run bench:all"
-echo
+download_beam() {
+  log "BEAM (100K, 500K, 1M)"
+  local raw="https://raw.githubusercontent.com/mohammadtavakoli78/BEAM/main/chats"
+  local api="https://api.github.com/repos/mohammadtavakoli78/BEAM/contents/chats"
+  for size in 100K 500K 1M; do
+    local ids
+    ids=$(curl -fsSL "$api/$size" | grep -o '"name": *"[0-9]*"' | grep -o '[0-9]\+') || { err "could not list BEAM $size"; return 1; }
+    for id in $ids; do
+      fetch "$raw/$size/$id/chat.json" "$DATA_DIR/beam/$size/$id/chat.json" || return 1
+      fetch "$raw/$size/$id/probing_questions/probing_questions.json" "$DATA_DIR/beam/$size/$id/probing_questions/probing_questions.json" || return 1
+    done
+  done
+}
 
-if [ "$STATUS_LME" = "failed" ]; then
-  exit 1
-fi
+status=0
+for t in "${TARGETS[@]}"; do
+  case "$t" in
+    lme) download_lme || status=1 ;;
+    lme-m) download_lme_m || status=1 ;;
+    beam) download_beam || status=1 ;;
+    mab) download_mab || status=1 ;;
+  esac
+done
+log "data root: $DATA_DIR"
+exit $status

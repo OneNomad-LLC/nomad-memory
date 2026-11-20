@@ -288,6 +288,8 @@ export async function runRetrievalBenchmark(spec: {
   runs: number;
   config: Record<string, unknown>;
   notes: string;
+  /** Extra result fields known after the runs (e.g. how many questions couldn't be scored). */
+  extra?: () => Record<string, unknown>;
   runOnce: (run: number) => Promise<{ outcomes: QueryOutcome[]; writeMs: number[] }>;
 }): Promise<void> {
   const started = performance.now();
@@ -305,7 +307,7 @@ export async function runRetrievalBenchmark(spec: {
     benchmark: spec.benchmark,
     durationMs: Math.round(performance.now() - started),
     config: { ...spec.config, embeddingModel: getEmbeddingModelName(), topK: TOP_K, embedChars: EMBED_CHARS, runs: spec.runs, hardware: hardware() },
-    results: { ...acrossRuns(runs), runs },
+    results: { ...acrossRuns(runs), ...spec.extra?.(), runs },
     perCategory: byType,
     perQuestion: first.map(o => ({
       questionId: o.id, questionType: o.type,
