@@ -4,6 +4,7 @@ import type { StoredChunk } from './storage.js';
 import { Storage } from './storage.js';
 import { llmComplete, embed, isLlmAvailable } from './llm.js';
 import { isDuplicate } from './utils.js';
+import { redactSecrets, redactionEnabled } from './redact.js';
 
 // ── LLM Extraction Prompt ───────────────────────────────────────────
 
@@ -111,6 +112,8 @@ export async function extractFromConversation(
 
   for (const r of raw) {
     if (!r.content || !validTypes.includes(r.type)) continue;
+    // A memory that would have held a credential is dropped, not stored with a hole in it.
+    if (redactionEnabled() && redactSecrets(r.content).redacted > 0) continue;
 
     if (isDuplicate(r.content, existing)) continue;
 

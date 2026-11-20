@@ -195,7 +195,7 @@ When a fact changes, the old triple gets invalidated (marked with an end date) a
 
 Borrowed from neuroscience. When a memory gets recalled during a relevant conversation and marked as helpful, the system can update it with new context. A memory like "User prefers TypeScript" might get refined to "User prefers TypeScript for large projects but uses Python for quick scripts" if that nuance comes up in conversation.
 
-This only triggers if the memory hasn't been reconsolidated in the last 24 hours (to prevent over-updating) and requires an LLM API key.
+This only triggers if the memory hasn't been reconsolidated in the last 24 hours (to prevent over-updating) and requires an LLM API key. Memories with `origin: user` are never rewritten: what the user said stays in their words.
 
 ### Procedural rules
 
@@ -426,6 +426,7 @@ Then point your MCP client at `dist/server.js`:
 | `PRZM_MEMORY_EMBEDDING_MODEL` | `Xenova/bge-small-en-v1.5` | HuggingFace model for embeddings (legacy `ENGRAM_EMBEDDING_MODEL` also honored). After changing it, run `przm-memory-mcp reembed` — stored vectors stay in the old model's space until re-embedded, and the server warns at boot when they mismatch. |
 | `PRZM_MEMORY_AUTO_MAINTAIN` | `1` | Set `0` to disable the automatic consolidation pass (runs ~20s after boot when the last run is older than the interval). |
 | `PRZM_MEMORY_MAINTAIN_INTERVAL_HOURS` | `24` | Minimum hours between automatic consolidation passes. |
+| `PRZM_MEMORY_REDACT_SECRETS` | `1` | Set `0` to store text without redacting credentials (see [Secrets](#secrets)). |
 | `ENGRAM_DEVICE` | `cpu` | Embedding device: `cpu`, `dml` (DirectML), or `cuda` |
 | `ENGRAM_MODEL` | `anthropic/claude-haiku-4.5` | OpenRouter model ID for LLM features. Only used when `OPENROUTER_API_KEY` is set. Any model on [openrouter.ai](https://openrouter.ai) works. |
 | `STORAGE_BACKEND` | `file` | Storage backend: `file` (LanceDB + filesystem, default), `postgres` (self-hosted multi-tenant), or `cloud` (przm Cloud Pro). See below. |
@@ -793,6 +794,10 @@ This plugin contacts exactly two services:
 If you set `OPENROUTER_API_KEY`, it contacts the OpenRouter API for LLM features (you pick the model provider). Without any API keys, everything runs fully local.
 
 No telemetry. No analytics. No phoning home.
+
+### Secrets
+
+Every ingest passes through a redaction step before anything is embedded or stored. Credential shapes (provider API keys, GitHub, AWS, Slack, Google and Stripe tokens, JWTs, bearer tokens, private key blocks, `password=`-style assignments and passwords in connection strings) become `[REDACTED]`. Identifiers and placeholders such as `apiKey: string` or `password="your_password"` are left alone, so memories about code stay intact. Extraction drops a candidate memory outright when it would have held a secret. Set `PRZM_MEMORY_REDACT_SECRETS=0` to store raw text.
 
 ### Local storage
 

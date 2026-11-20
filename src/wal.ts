@@ -7,6 +7,7 @@ import { buildContextPrefix, normalizeDomain, normalizeTaxonomyValue } from './u
 import { chunkContent } from './chunker.js';
 import { extractAndPersistTriples } from './kg-extractor.js';
 import { sourceDedup } from './source-dedup.js';
+import { redactSecrets, redactionEnabled } from './redact.js';
 
 // Lightweight poisoning patterns checked at ingest time (no LLM, no search)
 const POISON_PATTERNS = [
@@ -162,7 +163,14 @@ export async function ingest(
   for (const entry of entries) {
     if (!entry.content || entry.content.trim().length < 5) continue;
 
-    const trimmedContent = stripLeakedMarkup(entry.content).trim();
+    let trimmedContent = stripLeakedMarkup(entry.content).trim();
+    if (redactionEnabled()) {
+      const { text, redacted } = redactSecrets(trimmedContent);
+      if (redacted > 0) {
+        console.error(`przm-memory: redacted ${redacted} secret(s) before storing`);
+        trimmedContent = text;
+      }
+    }
     const normDomain = normalizeDomain(entry.domain);
     const normTopic = normalizeTaxonomyValue(entry.topic);
 

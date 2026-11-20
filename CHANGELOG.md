@@ -10,6 +10,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 Lessons from a production deployment of a memory system that started from this repo's ideas.
 The plan, with what was left out and why, is `docs/plans/nomadbot-learnings.md`.
 
+### Added
+
+- **Secrets are redacted before storing.** `memory-ingest` replaces credential shapes
+  (provider API keys, GitHub, AWS, Slack, Google and Stripe tokens, JWTs, bearer tokens,
+  private key blocks, `password=`-style assignments, passwords in connection strings) with
+  `[REDACTED]` before anything is embedded or saved. Extraction drops a candidate memory that
+  would have held one. Values must look like a secret (eight or more characters mixing letters
+  and digits, not a placeholder), so `apiKey: string` and `password="your_password"` survive:
+  over the LongMemEval haystack's 199,509 turns the pass fires on 5, all real-looking tokens.
+  `PRZM_MEMORY_REDACT_SECRETS=0` turns it off.
+
 ### Fixed
 
 - **Recall no longer rewrites user memories.** Reconsolidation rewrote a recalled memory's
