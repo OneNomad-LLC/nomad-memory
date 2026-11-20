@@ -402,6 +402,11 @@ const INJECTION_PATTERNS = [
   { pattern: /\b(act as|you are now|pretend to be|new persona|new identity)\b/i, reason: 'Identity override attempt', severity: 'high' as const },
 ];
 
+/** True when the text carries a high-severity injection pattern (instruction or identity override). */
+export function hasHighSeverityInjection(content: string): boolean {
+  return INJECTION_PATTERNS.some(p => p.severity === 'high' && p.pattern.test(content));
+}
+
 /**
  * Check recent memories for poisoning patterns.
  * All heuristic — no LLM needed.
