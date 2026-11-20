@@ -192,7 +192,6 @@ export async function evaluateCorpus(
 // ── Aggregation ──────────────────────────────────────────────────────
 
 const METRICS = ['recallAll5', 'recallAll10', 'ndcg10', 'recallAny5', 'recallAny10', 'answerHit5', 'answerHit10'] as const;
-type Metric = typeof METRICS[number];
 
 const mean = (xs: number[]): number => (xs.length ? xs.reduce((a, b) => a + b, 0) / xs.length : 0);
 /** Sample standard deviation; 0 for a single run. */
