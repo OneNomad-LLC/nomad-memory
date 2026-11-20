@@ -288,8 +288,11 @@ export class MaintenanceBusyError extends Error {
 }
 
 const LOCK_FILE = 'maintenance.lock';
-/** A lock this old was left by a run that died without cleaning up. */
-const LOCK_STALE_MS = 3_600_000;
+/**
+ * A lock is normally released or found dead by its pid. This age is the backstop for a pid
+ * reused by an unrelated process; it sits well above the longest pass seen on a live store.
+ */
+const LOCK_STALE_MS = 6 * 3_600_000;
 let inFlight: Promise<MaintenanceResult | null> | null = null;
 
 /**
@@ -297,7 +300,7 @@ let inFlight: Promise<MaintenanceResult | null> | null = null;
  * data directory and each runs maintenance at boot when it is overdue; two overlapping runs
  * decay, promote and merge the same rows twice. In one process, callers share the run in
  * flight. Across processes, a lock file in the data directory decides; a lock whose process is
- * gone, or that is older than an hour, is taken over.
+ * gone, or that is older than six hours, is taken over.
  */
 async function runExclusive(
   config: SmartMemoryConfig,

@@ -70,10 +70,10 @@ describe('maintenance lock', () => {
     }
   });
 
-  it('takes over a lock older than an hour', async () => {
+  it('takes over a lock older than six hours', async () => {
     const { storage, config, dir, cleanup } = await store();
     try {
-      writeFileSync(join(dir, 'maintenance.lock'), JSON.stringify({ pid: process.ppid, at: new Date(Date.now() - 2 * 3_600_000).toISOString() }));
+      writeFileSync(join(dir, 'maintenance.lock'), JSON.stringify({ pid: process.ppid, at: new Date(Date.now() - 7 * 3_600_000).toISOString() }));
       await runMaintenance(config, storage);
       assert.notEqual(readMaintenanceState(dir).lastRunAt, null);
     } finally {

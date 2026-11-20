@@ -60,7 +60,7 @@ The plan, with what was left out and why, is `docs/plans/nomadbot-learnings.md`.
   sessions opened together decayed, promoted and merged the same memories twice;
   `memory-maintain` could also overlap the timer in one process. Callers in one process now
   share the run in flight, and a `maintenance.lock` file in the data directory keeps other
-  processes out. A lock whose process is gone, or that is over an hour old, is taken over. The
+  processes out. A lock whose process is gone, or that is over six hours old, is taken over. The
   scheduler checks "overdue" again once it holds the lock, so the second session skips.
   `memory-maintain` answers `maintenance_running` while another process holds it.
 
