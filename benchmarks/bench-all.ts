@@ -8,12 +8,12 @@
  * benchmarks/results/. The aggregator captures the most-recent file
  * per benchmark and stitches them together for the final summary.
  *
- * Skips benchmarks whose dataset is missing (LongMemEval) and
+ * Skips benchmarks whose dataset is missing and
  * reports the skip rather than failing — partial runs are valid.
  *
  * Usage:
  *   npm run bench:all
- *   npm run bench:all -- --skip longmemeval     # operational only
+ *   npm run bench:all -- --skip longmemeval-s-session,beam-100K,mab-conflict-resolution   # operational only
  *   npm run bench:all -- --only bench,query-latency    # specific set
  */
 
@@ -38,10 +38,22 @@ const SPECS: BenchSpec[] = [
   { name: 'ingest-throughput', script: 'ingest-throughput.ts' },
   { name: 'query-latency', script: 'query-latency.ts' },
   {
-    name: 'longmemeval',
+    name: 'longmemeval-s-session',
     script: 'longmemeval.ts',
     datasetCheck: join(HERE, 'data', 'longmemeval_s_cleaned.json'),
     datasetHint: 'bash benchmarks/download-datasets.sh lme',
+  },
+  {
+    name: 'beam-100K',
+    script: 'beam.ts',
+    datasetCheck: join(HERE, 'data', 'beam', '100K'),
+    datasetHint: 'bash benchmarks/download-datasets.sh beam',
+  },
+  {
+    name: 'mab-conflict-resolution',
+    script: 'memoryagentbench.ts',
+    datasetCheck: join(HERE, 'data', 'mab', 'Conflict_Resolution.parquet'),
+    datasetHint: 'bash benchmarks/download-datasets.sh mab',
   },
 ];
 
@@ -150,6 +162,12 @@ for (const r of records) {
   const res = r.payload?.results ?? {};
   const cells: string[] = [];
 
+  const mean = (k: string) => (res[k] && typeof res[k].mean === 'number' ? res[k].mean : undefined);
+  for (const [k, label] of [['recallAll5', 'all@5'], ['recallAll10', 'all@10'], ['answerHit10', 'hit@10']] as const) {
+    if (mean(k) !== undefined) cells.push(`${label}=${(mean(k)! * 100).toFixed(1)}%`);
+  }
+  if (mean('ndcg10') !== undefined) cells.push(`NDCG@10=${mean('ndcg10')!.toFixed(3)}`);
+  if (mean('readMs.p50') !== undefined) cells.push(`read p50=${mean('readMs.p50')}ms p95=${mean('readMs.p95')}ms`);
   if (typeof res['recall@5'] === 'number') cells.push(`R@5=${(res['recall@5'] * 100).toFixed(1)}%`);
   if (typeof res['recall@10'] === 'number') cells.push(`R@10=${(res['recall@10'] * 100).toFixed(1)}%`);
   if (typeof res['ndcg@5'] === 'number') cells.push(`NDCG@5=${res['ndcg@5'].toFixed(3)}`);
