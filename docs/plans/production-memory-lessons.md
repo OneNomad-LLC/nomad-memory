@@ -133,22 +133,23 @@ No storage schema changes, so no migration. No public API is removed or renamed;
 
 ## Benchmarks used
 
-Benchmark set to be confirmed: which memory benchmarks to trust is being researched and Matt
-will choose. Until then, LongMemEval (500 questions, recall at 5 and 10, NDCG) is the check
-that no change lowers recall; it runs locally with no paid key. A change that lowers R@5 or
-R@10 there doesn't ship on by default.
+The experiments below were judged on LongMemEval's recall_any@5 and @10 (the metric the
+harness reported then, abstention questions included). Since then the benchmark set has been
+decided: LongMemEval S and M (recall_all, NDCG, session and turn level), BEAM and
+MemoryAgentBench, with QA accuracy graded by a Claude model. LoCoMo is dropped. See
+`BENCHMARKS.md`. The rule stands: a retrieval change that lowers recall on those doesn't ship
+on by default.
 
-LoCoMo is not used as evidence for or against any change here. The README's published LoCoMo
-numbers are left as they are for now; Matt may want them replaced or dropped. The synthetic
-`npm run bench` suite is a smoke test only: it moves between runs of identical code (R@5 73%
-to 80%) because search bumps recall counts in the background while later questions run.
+The synthetic `npm run bench` suite is a smoke test only: it moves between runs of identical
+code (R@5 73% to 80%) because search bumps recall counts in the background while later
+questions run.
 
 ## Results
 
 LongMemEval, all 500 questions, no API key, `Xenova/bge-small-en-v1.5` on CPU, this
 Windows machine. Baseline is `main` at the v1.6.0 commit, run from a separate checkout.
 
-| Run | R@5 | R@10 | NDCG@5 | NDCG@10 |
+| Run | recall_any@5 | recall_any@10 | NDCG@5 | NDCG@10 |
 |---|---|---|---|---|
 | Baseline (`main`) | 95.2% | 99.0% | 0.864 | 0.889 |
 | Experiment: multiplicative boosts | 95.2% | 98.4% | 0.864 | 0.888 |
@@ -171,8 +172,6 @@ Windows and is untouched here.
 
 ## Open for Matt
 
-- Whether to replace or drop the README's published LoCoMo numbers, and which benchmark set
-  to trust going forward.
 - Redaction is on by default and changes what `memory-ingest` stores. The opt-out exists, but
   it is a behaviour change for a minor release.
 - `dist/` is tracked and was not rebuilt here; the release step should rebuild it.

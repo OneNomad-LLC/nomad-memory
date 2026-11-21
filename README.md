@@ -5,7 +5,7 @@
 
 The memory surface of [przm](https://przm.sh), OneNomad's AI reliability suite. Project codename: `engram`. The GitHub repo is now [`OneNomad-LLC/przm-memory`](https://github.com/OneNomad-LLC/przm-memory) (old URLs redirect); the npm package publishes as `@onenomad/przm-memory` at v1.0. Until then, install from source.
 
-A memory system for AI agents. LLMs can't remember anything between conversations by default, and the existing solutions are either too simple (just dump everything in a vector DB) or too expensive (send your entire history to an API every time). przm Memory sits in the middle. It runs locally, doesn't need an API key for basic operation, and scores **96.8% R@5 / 98.8% R@10 on LongMemEval** and **85.1% R@5 / 92.0% R@10 on LoCoMo**. On R@10 it beats MemPalace hybrid v5 (88.9%) by +3.1pp on LoCoMo and approaches MemPalace hybrid v4's R@5 (98.4%) on LongMemEval, at **44ms p50 search latency** on a 53-session corpus. Methodology is reproducible from a fresh clone with one command. See [`benchmarks/results/published/`](benchmarks/results/published) for committed result JSONs.
+A memory system for AI agents. LLMs can't remember anything between conversations by default, and the existing solutions are either too simple (just dump everything in a vector DB) or too expensive (send your entire history to an API every time). przm Memory sits in the middle. It runs locally and doesn't need an API key for basic operation. On LongMemEval S it puts every evidence session in its top 10 for 93.6% of questions, with no API key; on the much larger LongMemEval M haystacks and on BEAM's long multi-domain chats it does markedly worse, and the [benchmark results](#benchmark-results) show both.
 
 The core idea is that memory shouldn't just be "find similar text." When someone asks "where was I working last March?" the system needs to actually reason about time, not just pattern match on the word "March." So the search pipeline combines vector similarity, keyword matching with IDF weighting, temporal inference, a knowledge graph, and spreading activation over a memory graph. Each piece handles a different kind of recall that the others miss.
 
@@ -27,82 +27,64 @@ The core idea is that memory shouldn't just be "find similar text." When someone
 
 ## Benchmark Results
 
-Tested against the [LoCoMo benchmark](https://github.com/snap-research/locomo) (1,986 QA pairs across 10 long conversations). No LLM reranking, just the retrieval pipeline on its own.
+Retrieval only: did przm-memory's search put the evidence in its top 10? No model in the loop,
+no API key, no reranker. This is not QA accuracy (whether a model then answers correctly); the
+harness for that exists but hasn't been run with a grader yet. Methodology, subsets and
+caveats: [BENCHMARKS.md](BENCHMARKS.md). Result files: [`benchmarks/results/published/`](benchmarks/results/published).
 
-```
-Per-category:
-  adversarial               R@5= 89.7%  R@10= 95.1%
-  open-domain               R@5= 88.8%  R@10= 94.3%
-  single-hop                R@5= 78.0%  R@10= 86.9%
-  temporal                  R@5= 82.6%  R@10= 91.6%
-  temporal-inference        R@5= 61.5%  R@10= 74.0%
+Measured 2026-11-20 on an AMD Ryzen 7 9800X3D (16 threads, 31 GB), Windows 11, Node 25, with
+`Xenova/bge-small-en-v1.5` embeddings on the CPU. Several runs shared the machine, so latency is
+an upper bound.
 
-  OVERALL                   R@5=85.1%   R@10=92.0%
-  Embedding model           Xenova/all-MiniLM-L6-v2 (23MB, runs on CPU)
-```
+| Benchmark | Questions | Runs | recall_all@5 | recall_all@10 | NDCG@10 | Read p50 / p95 | Context per query |
+|---|---|---|---|---|---|---|---|
+| LongMemEval S, session level | 470 (all) | 1 | 84.0% | 93.6% | 0.895 | 87 / 188 ms | 31.3K tokens |
+| LongMemEval S, turn level | 120 (20 per type) | 1 | 56.7% | 69.2% | 0.603 | 142 / 293 ms | 2.9K tokens |
+| LongMemEval M, session level | 120 (20 per type) | 1 | 74.2% | 79.2% | 0.724 | 176 / 422 ms | 32.8K tokens |
+| LongMemEval M, turn level | 12 (2 per type) | 1 | 58.3% | 66.7% | 0.594 | 555 / 768 ms | 2.8K tokens |
+| BEAM 100K | 240 of 400 | 3 | 15.0% ±0.0 | 19.7% ±0.2 | 0.230 | 149 / 251 ms | 7.5K tokens |
+| BEAM 500K (10 chats) | 124 of 200 | 1 | 9.7% | 17.7% | 0.162 | 243 / 358 ms | 6.0K tokens |
+| BEAM 1M (5 chats) | 61 of 100 | 1 | 13.1% | 16.4% | 0.191 | 126 / 229 ms | 8.4K tokens |
 
-> Published benchmark numbers were measured under the pre-1.1 default
-> (MiniLM-L6-v2). v1.1.0 changed the default to bge-small-en-v1.5,
-> which scores substantially higher on BEIR-style retrieval; the
-> LongMemEval/LoCoMo suites have not been re-run under it yet.
+MemoryAgentBench labels no evidence, so it is scored by whether a retrieved item contains the
+gold answer (answer_hit, a weaker proxy):
 
-For details on recent benchmark optimization work including regression fixes, sub-session chunking, and reranking analysis, see [docs/benchmark-optimization.md](docs/benchmark-optimization.md).
+| Benchmark | Questions | Runs | answer_hit@5 | answer_hit@10 | Read p50 / p95 |
+|---|---|---|---|---|---|
+| FactConsolidation, 6K to 64K tokens, single- and multi-hop | 600 | 3 | 54.2% ±0.0 | 60.2% ±0.0 | 278 / 578 ms |
+| FactConsolidation, 262K tokens, single- and multi-hop | 200 | 1 | 53.5% | 53.5% | 543 / 657 ms |
+| RULER QA (Accurate_Retrieval) | 200 | 3 | 71.3% ±0.3 | 82.5% ±0.0 | 420 / 790 ms |
 
-### How to read these numbers
+On FactConsolidation the single-hop questions score 99% to 100% answer_hit@10 at every size,
+and the multi-hop ones 36% (6K) falling to 7% (262K): the second hop's fact shares few words
+with the question. A hit also doesn't show the newer of two conflicting facts was preferred.
 
-Most "AI memory" projects publish one of two very different metrics, and the field treats them as interchangeable when they aren't:
+How to read these:
 
-- **Retrieval recall (R@K)** — did the right memory land in the top K candidates? Computed deterministically from the dataset's ground-truth session IDs. No LLM in the loop. Reproducible from a clone.
-- **LLM-judge accuracy** — did the final answer (an LLM-generated response that USED the retrieved memory) match the ground truth, as graded by ANOTHER LLM? Outcome depends on the answer LLM, the judge LLM, and the judge prompt.
+- **recall_all@k** counts a question only when *every* evidence item is in the top k.
+  recall_any@k (at least one) is in the result files too: on LongMemEval S session level it is
+  95.1% and 99.2%. Earlier releases of this README quoted recall_any with abstention questions
+  included; the numbers above replace those.
+- **Abstention questions are excluded** from LongMemEval retrieval scoring, as in the official
+  evaluation. BEAM questions that name no evidence messages (abstention, and many others) are
+  left out of retrieval scoring and counted in the result files.
+- **Session level vs turn level.** Session level finds the right conversation, but hands a
+  model about 31K tokens to read per question. Turn level hands over about 3K, and finds all
+  the evidence far less often.
+- **M is the honest test.** LongMemEval M haystacks run to about 1.5M tokens, past any context
+  window, and recall falls from S to M. BEAM is harder still: multi-hop, event-ordering and
+  summarisation questions need many messages, and recall_all rarely gets them all.
+- **Runs and variance.** LongMemEval stores one haystack per question and runs one query, so a
+  run is deterministic: three runs of a 60-question sample matched exactly (standard deviation
+  0, latency aside). BEAM and MemoryAgentBench run many queries against one store, so they were
+  repeated where time allowed. Subsets are fixed (the first N of each type, the first N chats)
+  and named in each result file.
+- **Write latency** (per item, embedding plus its share of a batched store write) ran from
+  6 ms p50 for one-line facts to 107 ms p50 for 2,000-character sessions; each result file
+  has its own.
 
-These are not directly comparable. A system can hit 95% R@10 (the right memory was retrieved) and still produce wrong answers (the answer LLM ignored it or hallucinated). A system can hit 95% LLM-judge (lenient grader rewarded paraphrases) without ever retrieving the right memory.
-
-przm Memory publishes R@10. The two tables below are split by metric so you can compare like to like.
-
-#### Retrieval recall — direct comparisons
-
-LongMemEval (n=500, methodology-clean, verified 2026-05-16):
-
-| System | LongMemEval R@5 | LongMemEval R@10 | Requires API | Notes |
-|--------|-----------------|------------------|--------------|-------|
-| MemPalace hybrid v4 (held-out) | 98.4% | — | No | Their best zero-API config |
-| **przm Memory** | **96.8%** | **98.8%** | **No** | **Local MiniLM, 9-stage hybrid, no rerank — R@10 exceeds MemPalace's R@5** |
-| MemPalace raw ChromaDB | 96.6% | — | No | Baseline ChromaDB embeddings |
-| MemMachine v0.2 | — | — | Yes | (different metric, see LLM-judge table) |
-
-LoCoMo (n=1,986, R@10 retrieval recall):
-
-| System | LoCoMo R@10 | Requires API | Notes |
-|--------|-------------|--------------|-------|
-| **przm Memory** | **91.9%** | **No** | **Verified 2026-05-16, full 1,986 QA, post-fix code path** |
-| MemPalace hybrid v5 | 88.9% | No | Same metric, same dataset |
-| Supermemory | 83.5% | No | |
-
-#### LLM-judge accuracy — different metric, listed for context only
-
-| System | LoCoMo LLM-judge | Judge model | Notes |
-|--------|------------------|-------------|-------|
-| Mem0 | 91.6% (April 2026 claim) | gpt-4o-mini | See methodology caveats below |
-| MemMachine v0.2 | 91.7% | GPT-4.1-mini | |
-| Backboard | 90.1% | GPT-4.1 | |
-| Zep Graphiti | 85.2% | — | Graph-based retrieval |
-| Letta | ~83.2% | — | |
-| Zep (standard) | 75.1% | — | |
-| Mem0 | 64-67% (pre-2026 published) | — | The number widely cited before mem0's April 2026 update |
-| OpenAI memory | 52.9% | — | Built-in ChatGPT memory |
-
-#### Methodology caveats on the LLM-judge numbers
-
-LLM-judge scores are sensitive to choices that aren't always disclosed in headline numbers. Things worth checking when comparing:
-
-- **Grader bias.** mem0's published judge prompt at [`evaluation/metrics/llm_judge.py:23`](https://github.com/mem0ai/mem0/blob/main/evaluation/metrics/llm_judge.py) instructs the LLM verbatim: *"you should be generous with your grading - as long as it touches on the same topic as the gold answer, it should be counted as CORRECT."* Generous grading inflates scores vs strict matching.
-- **Question filtering.** mem0's eval drops Category 5 (adversarial) questions before averaging ([`llm_judge.py:87-89`](https://github.com/mem0ai/mem0/blob/main/evaluation/metrics/llm_judge.py)). Adversarial robustness doesn't enter the headline.
-- **OSS vs hosted code path.** mem0's eval calls the hosted Platform via `MemoryClient`, not the OSS `Memory` class ([`evaluation/src/memzero/add.py:47-51`](https://github.com/mem0ai/mem0/blob/main/evaluation/src/memzero/add.py)). The published numbers can't be reproduced on the OSS code anyone can install.
-- **Extraction tuning.** mem0's eval pushes LoCoMo-specific `custom_instructions` to the project before ingest, including `"Extract memories only from user messages, not incorporating assistant responses"` ([`add.py:39`](https://github.com/mem0ai/mem0/blob/main/evaluation/src/memzero/add.py)) — corroborating Zep's [public critique](https://blog.getzep.com/lies-damn-lies-statistics-is-mem0-really-sota-in-agent-memory/).
-
-These aren't "gotchas" that disqualify the numbers — they're choices, and other projects make their own. The point is that LLM-judge accuracy isn't a standardized metric the way R@K is. Compare like to like.
-
-The R@10 numbers above are reproducible from a fresh clone with `pnpm bench:locomo` (committed result JSON in `benchmarks/results/published/`). The methodology is the architecture documented above; there's no benchmark-specific tuning in the search pipeline. Run the bench yourself.
+Numbers from other memory systems are not listed: we haven't measured them under this harness,
+and most publish QA accuracy, a different metric.
 
 ## How It Works
 
@@ -690,69 +672,35 @@ Everything lives locally:
 
 ## Benchmarks
 
-Clone the repo, install, fetch the public datasets, run the whole suite:
+Clone, install, fetch the open datasets, run:
 
 ```bash
 git clone https://github.com/OneNomad-LLC/przm-memory.git
 cd przm-memory
 npm install
-bash benchmarks/download-datasets.sh
-npm run bench:all
+bash benchmarks/download-datasets.sh          # LongMemEval S, BEAM, MemoryAgentBench
+bash benchmarks/download-datasets.sh lme-m    # LongMemEval M, 2.7 GB
+npm run bench:longmemeval                     # S, session level
+npm run bench:longmemeval -- --variant m --per-type 20
+npm run bench:beam -- --size 100K --runs 3
+npm run bench:mab -- --split Conflict_Resolution --runs 3
+npm run bench:all                             # LongMemEval S, BEAM 100K, FactConsolidation, operational benches
 ```
 
-That's it. Every benchmark writes a JSON result file into `benchmarks/results/` and a consolidated table prints at the end. Missing datasets get skipped, not failed — partial runs are valid. No API keys are required for the default configuration.
-
-For full methodology, dataset citations, and reproducibility steps, see [BENCHMARKS.md](BENCHMARKS.md).
-
-### Our scores at HEAD
-
-| Benchmark | Metric | Score | Hardware | Notes |
-|-----------|-------|------|----------|-------|
-| LongMemEval (500 Q) | R@5 | **96.8%** | Windows / Radeon RX 9070 XT (DML) | Zero-API, verified 2026-05-16 |
-| LongMemEval (500 Q) | R@10 | **98.8%** | Windows / Radeon RX 9070 XT (DML) | Zero-API, verified 2026-05-16 |
-| LongMemEval (500 Q) | p50 latency | **44ms** | Windows / Radeon RX 9070 XT (DML) | Local LanceDB, zero API roundtrips |
-| LoCoMo (1,986 QA) | R@10 | **91.9%** | Windows / Radeon RX 9070 XT (DML) | Zero-API, verified 2026-05-16 — beats MemPalace hybrid v5 (88.9%) by +3.0pp |
-| LoCoMo (1,986 QA) | R@5 | **85.5%** | Windows / Radeon RX 9070 XT (DML) | Zero-API, verified 2026-05-16 |
-| LoCoMo (1,986 QA) | p50 latency | **~150ms** | Windows / Radeon RX 9070 XT (DML) | Local LanceDB, zero API roundtrips |
-
-The committed LongMemEval result JSON is at [`benchmarks/results/published/longmemeval-2026-05-16.json`](benchmarks/results/published/longmemeval-2026-05-16.json) — pins the exact commit, embedding model, per-category breakdown, and latency percentiles. The previous 96.0% baseline lives at `longmemeval-2026-05-15.json`; the +0.8pp improvement came from a temporal date-anchor fix and aggregation-query candidate-pool widening. Reproduce with `npm run bench:longmemeval`. LoCoMo numbers are awaiting re-verification on the post-fix code path; the re-run will land in `published/` when complete.
-
-A note on the methodology fixes that landed alongside this verification:
-
-- **`recallAtK` no longer auto-passes questions with empty `answer_session_ids`.** Previously, such questions counted as a hit (inflating R@5 by ~3pp on LongMemEval); they're now excluded from the denominator. The verified 96.0% R@5 reflects this correction.
-- **The benchmark ingest path now applies `buildContextPrefix()` at ingest** to match the query-side prefix in `src/search.ts`. Without symmetric prefixes, embedding spaces drift apart and recall collapses to chance (~12% R@5 in a pre-fix run); fixing this restored honest measurement.
-- **The benchmark forces `STORAGE_BACKEND=file`** at module load. Without it, `Storage(dataDir)` silently auto-routes to przm Cloud when a credentials file exists, mixing the bench's chunks with cloud-tenant data and destroying isolation. The bench now runs purely local.
-
-### LoCoMo
-
-[Snap Research's LoCoMo](https://github.com/snap-research/locomo) — 1,986 multi-hop QA pairs across 10 long synthetic conversations. We score Recall@5 and Recall@10 with the full hybrid retrieval pipeline. A retrieved session counts as a hit if it contains any of the evidence dialog IDs for the question.
-
-Categories: `single-hop`, `temporal`, `temporal-inference`, `open-domain`, `adversarial`.
+No API key is needed for any of these. QA accuracy needs one (`ANTHROPIC_API_KEY`) and grades
+with a Claude model, so its scores are not directly comparable with numbers graded by the
+official gpt-4o graders:
 
 ```bash
-npm run bench:locomo                    # full run
-npm run bench:locomo -- --limit 200     # quick subset
-npm run bench:locomo -- --rerank        # with LLM rerank (needs OPENROUTER_API_KEY)
-npm run bench:locomo -- --verbose
+ANTHROPIC_API_KEY=... npm run bench:qa -- --benchmark lme-s --mode memory --runs 3
+ANTHROPIC_API_KEY=... npm run bench:qa -- --benchmark lme-s --mode full-context --runs 3   # no-memory baseline
 ```
 
-Runtime: ~3–5 min on an M-series Mac. Paper: [Maharana et al., 2024](https://arxiv.org/abs/2402.17753).
-
-### LongMemEval
-
-[LongMemEval](https://huggingface.co/datasets/xiaowu0162/longmemeval-cleaned) — 500 questions across six types, ~53 candidate sessions per question. We score Recall@5 / @10 and NDCG@5 / @10. Binary recall — at least one answer session in the top K.
-
-```bash
-npm run bench:longmemeval
-npm run bench:longmemeval -- --limit 50
-npm run bench:longmemeval -- --rerank
-```
-
-Runtime: ~6–10 min for the full 500 on an M-series Mac. The dataset is ~277 MB. Paper: [Wu et al., 2024](https://arxiv.org/abs/2410.10813).
+[BENCHMARKS.md](BENCHMARKS.md) has the methodology, every flag, and why LoCoMo is no longer used.
 
 ### przm Memory synthetic suite (`bench`)
 
-A self-contained 15-question battery covering single-fact recall, preferences, temporal reasoning, knowledge updates, and adversarial / distractor resistance. No dataset download. Exits non-zero when R@5 drops below 70% — used as the pre-merge regression gate.
+A self-contained 15-question battery covering single-fact recall, preferences, temporal reasoning, knowledge updates, and adversarial / distractor resistance. No dataset download. Exits non-zero when R@5 drops below 70%. Its scores move between runs of identical code (R@5 73% to 80%), because search bumps recall counts in the background while later questions run, so treat it as a smoke test.
 
 ```bash
 npm run bench

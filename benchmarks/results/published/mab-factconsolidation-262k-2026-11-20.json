@@ -1,0 +1,3920 @@
+{
+  "version": "1.6.0",
+  "commit": "3634632",
+  "ranAt": "2026-11-21T00:41:57.812Z",
+  "benchmark": "mab-conflict-resolution",
+  "durationMs": 219649,
+  "config": {
+    "dataset": "MemoryAgentBench Conflict_Resolution",
+    "sources": [
+      "factconsolidation_mh_262k",
+      "factconsolidation_sh_262k"
+    ],
+    "embeddingModel": "Xenova/bge-small-en-v1.5",
+    "topK": 10,
+    "embedChars": 2000,
+    "runs": 1,
+    "hardware": {
+      "cpu": "AMD Ryzen 7 9800X3D 8-Core Processor",
+      "cores": 16,
+      "memoryGb": 31,
+      "os": "win32 10.0.26200",
+      "node": "v25.8.2",
+      "embeddingDevice": "cpu"
+    }
+  },
+  "results": {
+    "answerHit5": {
+      "mean": 0.535,
+      "std": 0
+    },
+    "answerHit10": {
+      "mean": 0.535,
+      "std": 0
+    },
+    "readMs.p50": {
+      "mean": 543,
+      "std": 0
+    },
+    "readMs.p95": {
+      "mean": 656.9,
+      "std": 0
+    },
+    "writeMs.p50": {
+      "mean": 2.9,
+      "std": 0
+    },
+    "writeMs.p95": {
+      "mean": 3.4,
+      "std": 0
+    },
+    "contextTokensPerQuery": {
+      "mean": 140,
+      "std": 0
+    },
+    "droppedQuestions": 0,
+    "runs": [
+      {
+        "questions": 200,
+        "answerHit5": 0.535,
+        "answerHit5N": 200,
+        "answerHit10": 0.535,
+        "answerHit10N": 200,
+        "readMs": {
+          "p50": 543,
+          "p95": 656.9,
+          "p99": 791.3,
+          "avg": 551.3,
+          "min": 466.1,
+          "max": 871.8
+        },
+        "writeMs": {
+          "p50": 2.9,
+          "p95": 3.4,
+          "p99": 3.8,
+          "avg": 3,
+          "min": 2.1,
+          "max": 16.9
+        },
+        "contextTokensPerQuery": 140
+      }
+    ]
+  },
+  "perCategory": {
+    "factconsolidation_mh_262k": {
+      "questions": 100,
+      "answerHit5": 0.07,
+      "answerHit5N": 100,
+      "answerHit10": 0.07,
+      "answerHit10N": 100,
+      "readMs": {
+        "p50": 567.1,
+        "p95": 735.8,
+        "p99": 871.8,
+        "avg": 580.8,
+        "min": 517.5,
+        "max": 871.8
+      },
+      "contextTokensPerQuery": 142
+    },
+    "factconsolidation_sh_262k": {
+      "questions": 100,
+      "answerHit5": 1,
+      "answerHit5N": 100,
+      "answerHit10": 1,
+      "answerHit10N": 100,
+      "readMs": {
+        "p50": 521.8,
+        "p95": 566.7,
+        "p99": 624.2,
+        "avg": 521.8,
+        "min": 466.1,
+        "max": 624.2
+      },
+      "contextTokensPerQuery": 138
+    }
+  },
+  "perQuestion": [
+    {
+      "questionId": "factconsolidation_mh_262k/0",
+      "questionType": "factconsolidation_mh_262k",
+      "recall5": 0,
+      "recall10": 0,
+      "latencyMs": 593,
+      "retrievedSessionIds": [
+        "6954",
+        "10906",
+        "10528",
+        "523",
+        "2302",
+        "1773",
+        "8455",
+        "11909",
+        "804",
+        "925"
+      ]
+    },
+    {
+      "questionId": "factconsolidation_mh_262k/1",
+      "questionType": "factconsolidation_mh_262k",
+      "recall5": 0,
+      "recall10": 0,
+      "latencyMs": 556,
+      "retrievedSessionIds": [
+        "1219",
+        "9973",
+        "215",
+        "954",
+        "1723",
+        "1746",
+        "2998",
+        "3491",
+        "3722",
+        "4018"
+      ]
+    },
+    {
+      "questionId": "factconsolidation_mh_262k/2",
+      "questionType": "factconsolidation_mh_262k",
+      "recall5": 0,
+      "recall10": 0,
+      "latencyMs": 573,
+      "retrievedSessionIds": [
+        "9135",
+        "10793",
+        "6325",
+        "16755",
+        "7435",
+        "829",
+        "5360",
+        "7075",
+        "9142",
+        "9185"
+      ]
+    },
+    {
+      "questionId": "factconsolidation_mh_262k/3",
+      "questionType": "factconsolidation_mh_262k",
+      "recall5": 0,
+      "recall10": 0,
+      "latencyMs": 528,
+      "retrievedSessionIds": [
+        "6274",
+        "14335",
+        "3005",
+        "1142",
+        "404",
+        "278",
+        "709",
+        "306",
+        "4916",
+        "3241"
+      ]
+    },
+    {
+      "questionId": "factconsolidation_mh_262k/4",
+      "questionType": "factconsolidation_mh_262k",
+      "recall5": 0,
+      "recall10": 0,
+      "latencyMs": 520,
+      "retrievedSessionIds": [
+        "11280",
+        "14617",
+        "11460",
+        "3806",
+        "2997",
+        "14053",
+        "859",
+        "13178",
+        "1908",
+        "14473"
+      ]
+    },
+    {
+      "questionId": "factconsolidation_mh_262k/5",
+      "questionType": "factconsolidation_mh_262k",
+      "recall5": 0,
+      "recall10": 0,
+      "latencyMs": 609,
+      "retrievedSessionIds": [
+        "352",
+        "2704",
+        "5006",
+        "11015",
+        "18115",
+        "84",
+        "872",
+        "887",
+        "1052",
+        "1452"
+      ]
+    },
+    {
+      "questionId": "factconsolidation_mh_262k/6",
+      "questionType": "factconsolidation_mh_262k",
+      "recall5": 1,
+      "recall10": 1,
+      "latencyMs": 520,
+      "retrievedSessionIds": [
+        "11551",
+        "7738",
+        "5671",
+        "10097",
+        "2187",
+        "7675",
+        "1453",
+        "2001",
+        "4433",
+        "14968"
+      ]
+    },
+    {
+      "questionId": "factconsolidation_mh_262k/7",
+      "questionType": "factconsolidation_mh_262k",
+      "recall5": 0,
+      "recall10": 0,
+      "latencyMs": 540,
+      "retrievedSessionIds": [
+        "17296",
+        "2353",
+        "1780",
+        "11039",
+        "11307",
+        "11792",
+        "6486",
+        "6701",
+        "18306",
+        "17224"
+      ]
+    },
+    {
+      "questionId": "factconsolidation_mh_262k/8",
+      "questionType": "factconsolidation_mh_262k",
+      "recall5": 0,
+      "recall10": 0,
+      "latencyMs": 545,
+      "retrievedSessionIds": [
+        "14943",
+        "13949",
+        "3918",
+        "15598",
+        "2538",
+        "12810",
+        "14413",
+        "11318",
+        "18054",
+        "2507"
+      ]
+    },
+    {
+      "questionId": "factconsolidation_mh_262k/9",
+      "questionType": "factconsolidation_mh_262k",
+      "recall5": 0,
+      "recall10": 0,
+      "latencyMs": 575,
+      "retrievedSessionIds": [
+        "1153",
+        "4161",
+        "13419",
+        "11989",
+        "13467",
+        "2973",
+        "800",
+        "252",
+        "351",
+        "422"
+      ]
+    },
+    {
+      "questionId": "factconsolidation_mh_262k/10",
+      "questionType": "factconsolidation_mh_262k",
+      "recall5": 0,
+      "recall10": 0,
+      "latencyMs": 552,
+      "retrievedSessionIds": [
+        "8203",
+        "10392",
+        "2437",
+        "17849",
+        "17398",
+        "2731",
+        "5545",
+        "2861",
+        "16255",
+        "7879"
+      ]
+    },
+    {
+      "questionId": "factconsolidation_mh_262k/11",
+      "questionType": "factconsolidation_mh_262k",
+      "recall5": 0,
+      "recall10": 0,
+      "latencyMs": 522,
+      "retrievedSessionIds": [
+        "10627",
+        "15041",
+        "229",
+        "15413",
+        "7051",
+        "7942",
+        "28",
+        "3632",
+        "3718",
+        "107"
+      ]
+    },
+    {
+      "questionId": "factconsolidation_mh_262k/12",
+      "questionType": "factconsolidation_mh_262k",
+      "recall5": 0,
+      "recall10": 0,
+      "latencyMs": 564,
+      "retrievedSessionIds": [
+        "9902",
+        "15213",
+        "4123",
+        "15985",
+        "2876",
+        "3220",
+        "10472",
+        "3372",
+        "1689",
+        "13293"
+      ]
+    },
+    {
+      "questionId": "factconsolidation_mh_262k/13",
+      "questionType": "factconsolidation_mh_262k",
+      "recall5": 0,
+      "recall10": 0,
+      "latencyMs": 518,
+      "retrievedSessionIds": [
+        "11396",
+        "851",
+        "8244",
+        "4042",
+        "5538",
+        "17489",
+        "2395",
+        "4576",
+        "426",
+        "7043"
+      ]
+    },
+    {
+      "questionId": "factconsolidation_mh_262k/14",
+      "questionType": "factconsolidation_mh_262k",
+      "recall5": 0,
+      "recall10": 0,
+      "latencyMs": 523,
+      "retrievedSessionIds": [
+        "14149",
+        "13064",
+        "1763",
+        "863",
+        "736",
+        "5829",
+        "5860",
+        "6083",
+        "7616",
+        "7941"
+      ]
+    },
+    {
+      "questionId": "factconsolidation_mh_262k/15",
+      "questionType": "factconsolidation_mh_262k",
+      "recall5": 1,
+      "recall10": 1,
+      "latencyMs": 567,
+      "retrievedSessionIds": [
+        "4014",
+        "15285",
+        "179",
+        "509",
+        "2307",
+        "2389",
+        "6193",
+        "2395",
+        "8105",
+        "10164"
+      ]
+    },
+    {
+      "questionId": "factconsolidation_mh_262k/16",
+      "questionType": "factconsolidation_mh_262k",
+      "recall5": 0,
+      "recall10": 0,
+      "latencyMs": 542,
+      "retrievedSessionIds": [
+        "10581",
+        "15833",
+        "3494",
+        "2576",
+        "2534",
+        "5117",
+        "14212",
+        "9721",
+        "14240",
+        "4806"
+      ]
+    },
+    {
+      "questionId": "factconsolidation_mh_262k/17",
+      "questionType": "factconsolidation_mh_262k",
+      "recall5": 0,
+      "recall10": 0,
+      "latencyMs": 544,
+      "retrievedSessionIds": [
+        "86",
+        "17288",
+        "4336",
+        "4671",
+        "3576",
+        "318",
+        "11345",
+        "1616",
+        "8629",
+        "5676"
+      ]
+    },
+    {
+      "questionId": "factconsolidation_mh_262k/18",
+      "questionType": "factconsolidation_mh_262k",
+      "recall5": 0,
+      "recall10": 0,
+      "latencyMs": 571,
+      "retrievedSessionIds": [
+        "16048",
+        "10607",
+        "14040",
+        "17659",
+        "17940",
+        "11555",
+        "15417",
+        "8153",
+        "17005",
+        "7414"
+      ]
+    },
+    {
+      "questionId": "factconsolidation_mh_262k/19",
+      "questionType": "factconsolidation_mh_262k",
+      "recall5": 0,
+      "recall10": 0,
+      "latencyMs": 544,
+      "retrievedSessionIds": [
+        "17093",
+        "765",
+        "4567",
+        "15010",
+        "2954",
+        "3523",
+        "8774",
+        "9774",
+        "1790",
+        "3214"
+      ]
+    },
+    {
+      "questionId": "factconsolidation_mh_262k/20",
+      "questionType": "factconsolidation_mh_262k",
+      "recall5": 0,
+      "recall10": 0,
+      "latencyMs": 597,
+      "retrievedSessionIds": [
+        "310",
+        "1371",
+        "6134",
+        "3698",
+        "5961",
+        "8565",
+        "3128",
+        "9424",
+        "8115",
+        "1866"
+      ]
+    },
+    {
+      "questionId": "factconsolidation_mh_262k/21",
+      "questionType": "factconsolidation_mh_262k",
+      "recall5": 0,
+      "recall10": 0,
+      "latencyMs": 554,
+      "retrievedSessionIds": [
+        "7413",
+        "8631",
+        "407",
+        "13324",
+        "2101",
+        "18255",
+        "13740",
+        "869",
+        "6515",
+        "10361"
+      ]
+    },
+    {
+      "questionId": "factconsolidation_mh_262k/22",
+      "questionType": "factconsolidation_mh_262k",
+      "recall5": 0,
+      "recall10": 0,
+      "latencyMs": 530,
+      "retrievedSessionIds": [
+        "1802",
+        "13507",
+        "12556",
+        "2479",
+        "5559",
+        "13372",
+        "4874",
+        "10235",
+        "15772",
+        "13750"
+      ]
+    },
+    {
+      "questionId": "factconsolidation_mh_262k/23",
+      "questionType": "factconsolidation_mh_262k",
+      "recall5": 0,
+      "recall10": 0,
+      "latencyMs": 540,
+      "retrievedSessionIds": [
+        "4991",
+        "14268",
+        "14386",
+        "6225",
+        "13411",
+        "14775",
+        "8686",
+        "16269",
+        "11948",
+        "9121"
+      ]
+    },
+    {
+      "questionId": "factconsolidation_mh_262k/24",
+      "questionType": "factconsolidation_mh_262k",
+      "recall5": 0,
+      "recall10": 0,
+      "latencyMs": 585,
+      "retrievedSessionIds": [
+        "12974",
+        "8338",
+        "11545",
+        "214",
+        "18280",
+        "8558",
+        "7869",
+        "15058",
+        "11636",
+        "13148"
+      ]
+    },
+    {
+      "questionId": "factconsolidation_mh_262k/25",
+      "questionType": "factconsolidation_mh_262k",
+      "recall5": 0,
+      "recall10": 0,
+      "latencyMs": 540,
+      "retrievedSessionIds": [
+        "12327",
+        "7049",
+        "3454",
+        "3558",
+        "5088",
+        "5701",
+        "8600",
+        "12442",
+        "40",
+        "2165"
+      ]
+    },
+    {
+      "questionId": "factconsolidation_mh_262k/26",
+      "questionType": "factconsolidation_mh_262k",
+      "recall5": 1,
+      "recall10": 1,
+      "latencyMs": 549,
+      "retrievedSessionIds": [
+        "10058",
+        "3219",
+        "245",
+        "4695",
+        "8954",
+        "18019",
+        "209",
+        "15624",
+        "0",
+        "6172"
+      ]
+    },
+    {
+      "questionId": "factconsolidation_mh_262k/27",
+      "questionType": "factconsolidation_mh_262k",
+      "recall5": 0,
+      "recall10": 0,
+      "latencyMs": 623,
+      "retrievedSessionIds": [
+        "5117",
+        "2534",
+        "11958",
+        "2576",
+        "14666",
+        "1347",
+        "9721",
+        "4806",
+        "14240",
+        "8309"
+      ]
+    },
+    {
+      "questionId": "factconsolidation_mh_262k/28",
+      "questionType": "factconsolidation_mh_262k",
+      "recall5": 0,
+      "recall10": 0,
+      "latencyMs": 545,
+      "retrievedSessionIds": [
+        "14971",
+        "1389",
+        "10264",
+        "14480",
+        "6493",
+        "13836",
+        "14155",
+        "17704",
+        "2324",
+        "3382"
+      ]
+    },
+    {
+      "questionId": "factconsolidation_mh_262k/29",
+      "questionType": "factconsolidation_mh_262k",
+      "recall5": 0,
+      "recall10": 0,
+      "latencyMs": 547,
+      "retrievedSessionIds": [
+        "5947",
+        "14283",
+        "5056",
+        "5324",
+        "17237",
+        "1488",
+        "10865",
+        "9219",
+        "9541",
+        "7225"
+      ]
+    },
+    {
+      "questionId": "factconsolidation_mh_262k/30",
+      "questionType": "factconsolidation_mh_262k",
+      "recall5": 0,
+      "recall10": 0,
+      "latencyMs": 557,
+      "retrievedSessionIds": [
+        "17419",
+        "11855",
+        "10147",
+        "9216",
+        "14439",
+        "3849",
+        "4582",
+        "11344",
+        "12379",
+        "15120"
+      ]
+    },
+    {
+      "questionId": "factconsolidation_mh_262k/31",
+      "questionType": "factconsolidation_mh_262k",
+      "recall5": 0,
+      "recall10": 0,
+      "latencyMs": 561,
+      "retrievedSessionIds": [
+        "2023",
+        "3676",
+        "9543",
+        "10189",
+        "4032",
+        "18144",
+        "408",
+        "623",
+        "1721",
+        "2010"
+      ]
+    },
+    {
+      "questionId": "factconsolidation_mh_262k/32",
+      "questionType": "factconsolidation_mh_262k",
+      "recall5": 0,
+      "recall10": 0,
+      "latencyMs": 576,
+      "retrievedSessionIds": [
+        "2005",
+        "5679",
+        "75",
+        "1353",
+        "1610",
+        "3795",
+        "2846",
+        "3205",
+        "3578",
+        "258"
+      ]
+    },
+    {
+      "questionId": "factconsolidation_mh_262k/33",
+      "questionType": "factconsolidation_mh_262k",
+      "recall5": 0,
+      "recall10": 0,
+      "latencyMs": 602,
+      "retrievedSessionIds": [
+        "17838",
+        "1583",
+        "16355",
+        "4087",
+        "3718",
+        "4276",
+        "17225",
+        "9193",
+        "9283",
+        "14451"
+      ]
+    },
+    {
+      "questionId": "factconsolidation_mh_262k/34",
+      "questionType": "factconsolidation_mh_262k",
+      "recall5": 0,
+      "recall10": 0,
+      "latencyMs": 522,
+      "retrievedSessionIds": [
+        "5089",
+        "2346",
+        "1816",
+        "1174",
+        "13511",
+        "16509",
+        "14742",
+        "7259",
+        "3985",
+        "6503"
+      ]
+    },
+    {
+      "questionId": "factconsolidation_mh_262k/35",
+      "questionType": "factconsolidation_mh_262k",
+      "recall5": 0,
+      "recall10": 0,
+      "latencyMs": 575,
+      "retrievedSessionIds": [
+        "17229",
+        "7915",
+        "6581",
+        "15817",
+        "6117",
+        "12537",
+        "12603",
+        "2148",
+        "15678",
+        "4396"
+      ]
+    },
+    {
+      "questionId": "factconsolidation_mh_262k/36",
+      "questionType": "factconsolidation_mh_262k",
+      "recall5": 0,
+      "recall10": 0,
+      "latencyMs": 568,
+      "retrievedSessionIds": [
+        "15862",
+        "7763",
+        "10217",
+        "10268",
+        "14590",
+        "17972",
+        "13516",
+        "48",
+        "6516",
+        "12974"
+      ]
+    },
+    {
+      "questionId": "factconsolidation_mh_262k/37",
+      "questionType": "factconsolidation_mh_262k",
+      "recall5": 0,
+      "recall10": 0,
+      "latencyMs": 559,
+      "retrievedSessionIds": [
+        "13091",
+        "12330",
+        "7002",
+        "14488",
+        "11",
+        "35",
+        "2401",
+        "4277",
+        "4557",
+        "6167"
+      ]
+    },
+    {
+      "questionId": "factconsolidation_mh_262k/38",
+      "questionType": "factconsolidation_mh_262k",
+      "recall5": 0,
+      "recall10": 0,
+      "latencyMs": 560,
+      "retrievedSessionIds": [
+        "10253",
+        "12147",
+        "1814",
+        "9005",
+        "4355",
+        "17157",
+        "10880",
+        "7228",
+        "10313",
+        "11341"
+      ]
+    },
+    {
+      "questionId": "factconsolidation_mh_262k/39",
+      "questionType": "factconsolidation_mh_262k",
+      "recall5": 0,
+      "recall10": 0,
+      "latencyMs": 560,
+      "retrievedSessionIds": [
+        "5860",
+        "13895",
+        "2081",
+        "5270",
+        "5586",
+        "5749",
+        "6035",
+        "7398",
+        "7878",
+        "9322"
+      ]
+    },
+    {
+      "questionId": "factconsolidation_mh_262k/40",
+      "questionType": "factconsolidation_mh_262k",
+      "recall5": 0,
+      "recall10": 0,
+      "latencyMs": 707,
+      "retrievedSessionIds": [
+        "6249",
+        "5803",
+        "15182",
+        "647",
+        "634",
+        "6006",
+        "7110",
+        "3874",
+        "5443",
+        "3274"
+      ]
+    },
+    {
+      "questionId": "factconsolidation_mh_262k/41",
+      "questionType": "factconsolidation_mh_262k",
+      "recall5": 0,
+      "recall10": 0,
+      "latencyMs": 715,
+      "retrievedSessionIds": [
+        "18125",
+        "7742",
+        "16002",
+        "10021",
+        "17992",
+        "18256",
+        "8812",
+        "18075",
+        "16507",
+        "3418"
+      ]
+    },
+    {
+      "questionId": "factconsolidation_mh_262k/42",
+      "questionType": "factconsolidation_mh_262k",
+      "recall5": 0,
+      "recall10": 0,
+      "latencyMs": 584,
+      "retrievedSessionIds": [
+        "6530",
+        "11785",
+        "6410",
+        "3911",
+        "4793",
+        "15640",
+        "8403",
+        "14495",
+        "4198",
+        "9083"
+      ]
+    },
+    {
+      "questionId": "factconsolidation_mh_262k/43",
+      "questionType": "factconsolidation_mh_262k",
+      "recall5": 0,
+      "recall10": 0,
+      "latencyMs": 574,
+      "retrievedSessionIds": [
+        "9543",
+        "1069",
+        "13538",
+        "5686",
+        "3704",
+        "5465",
+        "1209",
+        "11603",
+        "7644",
+        "10015"
+      ]
+    },
+    {
+      "questionId": "factconsolidation_mh_262k/44",
+      "questionType": "factconsolidation_mh_262k",
+      "recall5": 0,
+      "recall10": 0,
+      "latencyMs": 559,
+      "retrievedSessionIds": [
+        "14296",
+        "6364",
+        "39",
+        "4332",
+        "11244",
+        "3557",
+        "15725",
+        "6677",
+        "9962",
+        "4647"
+      ]
+    },
+    {
+      "questionId": "factconsolidation_mh_262k/45",
+      "questionType": "factconsolidation_mh_262k",
+      "recall5": 0,
+      "recall10": 0,
+      "latencyMs": 543,
+      "retrievedSessionIds": [
+        "4873",
+        "7516",
+        "2217",
+        "1116",
+        "1743",
+        "8602",
+        "17237",
+        "7842",
+        "6481",
+        "5272"
+      ]
+    },
+    {
+      "questionId": "factconsolidation_mh_262k/46",
+      "questionType": "factconsolidation_mh_262k",
+      "recall5": 0,
+      "recall10": 0,
+      "latencyMs": 545,
+      "retrievedSessionIds": [
+        "17060",
+        "9900",
+        "4485",
+        "2252",
+        "8297",
+        "16544",
+        "17067",
+        "516",
+        "778",
+        "1297"
+      ]
+    },
+    {
+      "questionId": "factconsolidation_mh_262k/47",
+      "questionType": "factconsolidation_mh_262k",
+      "recall5": 0,
+      "recall10": 0,
+      "latencyMs": 574,
+      "retrievedSessionIds": [
+        "6957",
+        "285",
+        "14750",
+        "5340",
+        "16172",
+        "10753",
+        "15642",
+        "3949",
+        "11194",
+        "707"
+      ]
+    },
+    {
+      "questionId": "factconsolidation_mh_262k/48",
+      "questionType": "factconsolidation_mh_262k",
+      "recall5": 0,
+      "recall10": 0,
+      "latencyMs": 548,
+      "retrievedSessionIds": [
+        "5088",
+        "8600",
+        "346",
+        "3454",
+        "3558",
+        "5701",
+        "12442",
+        "12327",
+        "7049",
+        "40"
+      ]
+    },
+    {
+      "questionId": "factconsolidation_mh_262k/49",
+      "questionType": "factconsolidation_mh_262k",
+      "recall5": 0,
+      "recall10": 0,
+      "latencyMs": 534,
+      "retrievedSessionIds": [
+        "12002",
+        "16885",
+        "8567",
+        "82",
+        "1260",
+        "10111",
+        "12957",
+        "833",
+        "433",
+        "890"
+      ]
+    },
+    {
+      "questionId": "factconsolidation_mh_262k/50",
+      "questionType": "factconsolidation_mh_262k",
+      "recall5": 0,
+      "recall10": 0,
+      "latencyMs": 554,
+      "retrievedSessionIds": [
+        "2255",
+        "7530",
+        "1899",
+        "461",
+        "4465",
+        "1952",
+        "723",
+        "44",
+        "3657",
+        "6101"
+      ]
+    },
+    {
+      "questionId": "factconsolidation_mh_262k/51",
+      "questionType": "factconsolidation_mh_262k",
+      "recall5": 0,
+      "recall10": 0,
+      "latencyMs": 674,
+      "retrievedSessionIds": [
+        "12369",
+        "12309",
+        "17373",
+        "1739",
+        "238",
+        "1088",
+        "1171",
+        "9020",
+        "10709",
+        "8889"
+      ]
+    },
+    {
+      "questionId": "factconsolidation_mh_262k/52",
+      "questionType": "factconsolidation_mh_262k",
+      "recall5": 0,
+      "recall10": 0,
+      "latencyMs": 559,
+      "retrievedSessionIds": [
+        "4464",
+        "11440",
+        "16656",
+        "11166",
+        "12472",
+        "7626",
+        "10947",
+        "6933",
+        "11938",
+        "12320"
+      ]
+    },
+    {
+      "questionId": "factconsolidation_mh_262k/53",
+      "questionType": "factconsolidation_mh_262k",
+      "recall5": 0,
+      "recall10": 0,
+      "latencyMs": 570,
+      "retrievedSessionIds": [
+        "4520",
+        "18039",
+        "11222",
+        "4208",
+        "5241",
+        "9238",
+        "7225",
+        "9804",
+        "17878",
+        "2304"
+      ]
+    },
+    {
+      "questionId": "factconsolidation_mh_262k/54",
+      "questionType": "factconsolidation_mh_262k",
+      "recall5": 0,
+      "recall10": 0,
+      "latencyMs": 569,
+      "retrievedSessionIds": [
+        "1853",
+        "11860",
+        "13415",
+        "17744",
+        "10600",
+        "638",
+        "1732",
+        "2339",
+        "3009",
+        "3462"
+      ]
+    },
+    {
+      "questionId": "factconsolidation_mh_262k/55",
+      "questionType": "factconsolidation_mh_262k",
+      "recall5": 0,
+      "recall10": 0,
+      "latencyMs": 570,
+      "retrievedSessionIds": [
+        "2324",
+        "18223",
+        "6942",
+        "6493",
+        "9997",
+        "3382",
+        "10619",
+        "14971",
+        "16310",
+        "1389"
+      ]
+    },
+    {
+      "questionId": "factconsolidation_mh_262k/56",
+      "questionType": "factconsolidation_mh_262k",
+      "recall5": 0,
+      "recall10": 0,
+      "latencyMs": 572,
+      "retrievedSessionIds": [
+        "14409",
+        "12669",
+        "3196",
+        "9028",
+        "109",
+        "15545",
+        "2301",
+        "2497",
+        "9748",
+        "7380"
+      ]
+    },
+    {
+      "questionId": "factconsolidation_mh_262k/57",
+      "questionType": "factconsolidation_mh_262k",
+      "recall5": 0,
+      "recall10": 0,
+      "latencyMs": 562,
+      "retrievedSessionIds": [
+        "10302",
+        "12629",
+        "2413",
+        "3341",
+        "1110",
+        "1126",
+        "2008",
+        "2445",
+        "2664",
+        "3195"
+      ]
+    },
+    {
+      "questionId": "factconsolidation_mh_262k/58",
+      "questionType": "factconsolidation_mh_262k",
+      "recall5": 0,
+      "recall10": 0,
+      "latencyMs": 559,
+      "retrievedSessionIds": [
+        "3850",
+        "3053",
+        "4882",
+        "8704",
+        "2701",
+        "3882",
+        "4732",
+        "1593",
+        "10210",
+        "13822"
+      ]
+    },
+    {
+      "questionId": "factconsolidation_mh_262k/59",
+      "questionType": "factconsolidation_mh_262k",
+      "recall5": 0,
+      "recall10": 0,
+      "latencyMs": 573,
+      "retrievedSessionIds": [
+        "15803",
+        "1384",
+        "18152",
+        "9640",
+        "724",
+        "11939",
+        "8212",
+        "355",
+        "1171",
+        "9020"
+      ]
+    },
+    {
+      "questionId": "factconsolidation_mh_262k/60",
+      "questionType": "factconsolidation_mh_262k",
+      "recall5": 0,
+      "recall10": 0,
+      "latencyMs": 545,
+      "retrievedSessionIds": [
+        "1565",
+        "2493",
+        "8234",
+        "16056",
+        "2949",
+        "74",
+        "2723",
+        "3333",
+        "5522",
+        "5556"
+      ]
+    },
+    {
+      "questionId": "factconsolidation_mh_262k/61",
+      "questionType": "factconsolidation_mh_262k",
+      "recall5": 0,
+      "recall10": 0,
+      "latencyMs": 538,
+      "retrievedSessionIds": [
+        "8885",
+        "106",
+        "384",
+        "1240",
+        "1989",
+        "3220",
+        "7277",
+        "12193",
+        "1680",
+        "13261"
+      ]
+    },
+    {
+      "questionId": "factconsolidation_mh_262k/62",
+      "questionType": "factconsolidation_mh_262k",
+      "recall5": 0,
+      "recall10": 0,
+      "latencyMs": 550,
+      "retrievedSessionIds": [
+        "14519",
+        "13894",
+        "1929",
+        "341",
+        "16905",
+        "4943",
+        "9256",
+        "2027",
+        "15758",
+        "5014"
+      ]
+    },
+    {
+      "questionId": "factconsolidation_mh_262k/63",
+      "questionType": "factconsolidation_mh_262k",
+      "recall5": 0,
+      "recall10": 0,
+      "latencyMs": 591,
+      "retrievedSessionIds": [
+        "3789",
+        "12622",
+        "12573",
+        "5638",
+        "9872",
+        "13862",
+        "429",
+        "5139",
+        "6590",
+        "8008"
+      ]
+    },
+    {
+      "questionId": "factconsolidation_mh_262k/64",
+      "questionType": "factconsolidation_mh_262k",
+      "recall5": 0,
+      "recall10": 0,
+      "latencyMs": 565,
+      "retrievedSessionIds": [
+        "3320",
+        "14116",
+        "1426",
+        "2684",
+        "1545",
+        "3361",
+        "4828",
+        "7396",
+        "3165",
+        "8604"
+      ]
+    },
+    {
+      "questionId": "factconsolidation_mh_262k/65",
+      "questionType": "factconsolidation_mh_262k",
+      "recall5": 0,
+      "recall10": 0,
+      "latencyMs": 549,
+      "retrievedSessionIds": [
+        "5747",
+        "8560",
+        "949",
+        "9533",
+        "9521",
+        "3751",
+        "14443",
+        "11803",
+        "12487",
+        "5272"
+      ]
+    },
+    {
+      "questionId": "factconsolidation_mh_262k/66",
+      "questionType": "factconsolidation_mh_262k",
+      "recall5": 0,
+      "recall10": 0,
+      "latencyMs": 591,
+      "retrievedSessionIds": [
+        "733",
+        "9747",
+        "544",
+        "5710",
+        "8585",
+        "6244",
+        "11606",
+        "13627",
+        "15347",
+        "14766"
+      ]
+    },
+    {
+      "questionId": "factconsolidation_mh_262k/67",
+      "questionType": "factconsolidation_mh_262k",
+      "recall5": 0,
+      "recall10": 0,
+      "latencyMs": 540,
+      "retrievedSessionIds": [
+        "7623",
+        "16559",
+        "15102",
+        "3526",
+        "12442",
+        "13132",
+        "3558",
+        "8291",
+        "8984",
+        "11751"
+      ]
+    },
+    {
+      "questionId": "factconsolidation_mh_262k/68",
+      "questionType": "factconsolidation_mh_262k",
+      "recall5": 0,
+      "recall10": 0,
+      "latencyMs": 574,
+      "retrievedSessionIds": [
+        "44",
+        "15214",
+        "5354",
+        "15147",
+        "11111",
+        "9040",
+        "18279",
+        "11430",
+        "16083",
+        "1003"
+      ]
+    },
+    {
+      "questionId": "factconsolidation_mh_262k/69",
+      "questionType": "factconsolidation_mh_262k",
+      "recall5": 0,
+      "recall10": 0,
+      "latencyMs": 578,
+      "retrievedSessionIds": [
+        "9952",
+        "11662",
+        "15678",
+        "13190",
+        "14754",
+        "16242",
+        "16451",
+        "728",
+        "2188",
+        "2533"
+      ]
+    },
+    {
+      "questionId": "factconsolidation_mh_262k/70",
+      "questionType": "factconsolidation_mh_262k",
+      "recall5": 0,
+      "recall10": 0,
+      "latencyMs": 560,
+      "retrievedSessionIds": [
+        "2215",
+        "6767",
+        "696",
+        "3847",
+        "7499",
+        "7468",
+        "1530",
+        "15649",
+        "5862",
+        "3017"
+      ]
+    },
+    {
+      "questionId": "factconsolidation_mh_262k/71",
+      "questionType": "factconsolidation_mh_262k",
+      "recall5": 0,
+      "recall10": 0,
+      "latencyMs": 554,
+      "retrievedSessionIds": [
+        "2936",
+        "3712",
+        "15193",
+        "2203",
+        "15314",
+        "3104",
+        "9213",
+        "14922",
+        "5",
+        "89"
+      ]
+    },
+    {
+      "questionId": "factconsolidation_mh_262k/72",
+      "questionType": "factconsolidation_mh_262k",
+      "recall5": 0,
+      "recall10": 0,
+      "latencyMs": 583,
+      "retrievedSessionIds": [
+        "13274",
+        "15948",
+        "15667",
+        "6331",
+        "17671",
+        "13725",
+        "2329",
+        "6430",
+        "15076",
+        "4566"
+      ]
+    },
+    {
+      "questionId": "factconsolidation_mh_262k/73",
+      "questionType": "factconsolidation_mh_262k",
+      "recall5": 0,
+      "recall10": 0,
+      "latencyMs": 594,
+      "retrievedSessionIds": [
+        "2608",
+        "8543",
+        "15931",
+        "97",
+        "8201",
+        "6562",
+        "6787",
+        "11956",
+        "17774",
+        "14689"
+      ]
+    },
+    {
+      "questionId": "factconsolidation_mh_262k/74",
+      "questionType": "factconsolidation_mh_262k",
+      "recall5": 0,
+      "recall10": 0,
+      "latencyMs": 579,
+      "retrievedSessionIds": [
+        "14560",
+        "295",
+        "7573",
+        "4367",
+        "5626",
+        "859",
+        "10786",
+        "14053",
+        "10754",
+        "6235"
+      ]
+    },
+    {
+      "questionId": "factconsolidation_mh_262k/75",
+      "questionType": "factconsolidation_mh_262k",
+      "recall5": 1,
+      "recall10": 1,
+      "latencyMs": 571,
+      "retrievedSessionIds": [
+        "12510",
+        "8541",
+        "17780",
+        "46",
+        "10842",
+        "57",
+        "6290",
+        "207",
+        "8386",
+        "622"
+      ]
+    },
+    {
+      "questionId": "factconsolidation_mh_262k/76",
+      "questionType": "factconsolidation_mh_262k",
+      "recall5": 0,
+      "recall10": 0,
+      "latencyMs": 538,
+      "retrievedSessionIds": [
+        "18296",
+        "11380",
+        "144",
+        "314",
+        "1718",
+        "1590",
+        "2794",
+        "1712",
+        "2049",
+        "2320"
+      ]
+    },
+    {
+      "questionId": "factconsolidation_mh_262k/77",
+      "questionType": "factconsolidation_mh_262k",
+      "recall5": 0,
+      "recall10": 0,
+      "latencyMs": 594,
+      "retrievedSessionIds": [
+        "8664",
+        "15429",
+        "7900",
+        "16542",
+        "6620",
+        "8745",
+        "13844",
+        "14644",
+        "1201",
+        "11541"
+      ]
+    },
+    {
+      "questionId": "factconsolidation_mh_262k/78",
+      "questionType": "factconsolidation_mh_262k",
+      "recall5": 0,
+      "recall10": 0,
+      "latencyMs": 594,
+      "retrievedSessionIds": [
+        "5116",
+        "6221",
+        "13897",
+        "12697",
+        "3924",
+        "17430",
+        "4359",
+        "5356",
+        "679",
+        "933"
+      ]
+    },
+    {
+      "questionId": "factconsolidation_mh_262k/79",
+      "questionType": "factconsolidation_mh_262k",
+      "recall5": 1,
+      "recall10": 1,
+      "latencyMs": 543,
+      "retrievedSessionIds": [
+        "916",
+        "15922",
+        "5575",
+        "5258",
+        "55",
+        "203",
+        "425",
+        "506",
+        "1076",
+        "1250"
+      ]
+    },
+    {
+      "questionId": "factconsolidation_mh_262k/80",
+      "questionType": "factconsolidation_mh_262k",
+      "recall5": 0,
+      "recall10": 0,
+      "latencyMs": 566,
+      "retrievedSessionIds": [
+        "3519",
+        "17575",
+        "4590",
+        "5398",
+        "6246",
+        "15965",
+        "4845",
+        "11649",
+        "919",
+        "9945"
+      ]
+    },
+    {
+      "questionId": "factconsolidation_mh_262k/81",
+      "questionType": "factconsolidation_mh_262k",
+      "recall5": 0,
+      "recall10": 0,
+      "latencyMs": 566,
+      "retrievedSessionIds": [
+        "8765",
+        "18252",
+        "2418",
+        "8460",
+        "11128",
+        "4786",
+        "1270",
+        "301",
+        "4255",
+        "311"
+      ]
+    },
+    {
+      "questionId": "factconsolidation_mh_262k/82",
+      "questionType": "factconsolidation_mh_262k",
+      "recall5": 0,
+      "recall10": 0,
+      "latencyMs": 587,
+      "retrievedSessionIds": [
+        "9421",
+        "16369",
+        "8186",
+        "9179",
+        "5566",
+        "9933",
+        "13758",
+        "2173",
+        "6499",
+        "16040"
+      ]
+    },
+    {
+      "questionId": "factconsolidation_mh_262k/83",
+      "questionType": "factconsolidation_mh_262k",
+      "recall5": 0,
+      "recall10": 0,
+      "latencyMs": 565,
+      "retrievedSessionIds": [
+        "8502",
+        "8996",
+        "14252",
+        "871",
+        "2305",
+        "3290",
+        "11536",
+        "5458",
+        "3437",
+        "13724"
+      ]
+    },
+    {
+      "questionId": "factconsolidation_mh_262k/84",
+      "questionType": "factconsolidation_mh_262k",
+      "recall5": 0,
+      "recall10": 0,
+      "latencyMs": 597,
+      "retrievedSessionIds": [
+        "362",
+        "8364",
+        "3069",
+        "2092",
+        "9188",
+        "12887",
+        "555",
+        "8415",
+        "12365",
+        "4004"
+      ]
+    },
+    {
+      "questionId": "factconsolidation_mh_262k/85",
+      "questionType": "factconsolidation_mh_262k",
+      "recall5": 0,
+      "recall10": 0,
+      "latencyMs": 543,
+      "retrievedSessionIds": [
+        "5992",
+        "11230",
+        "133",
+        "5441",
+        "17109",
+        "1694",
+        "5281",
+        "11901",
+        "801",
+        "1327"
+      ]
+    },
+    {
+      "questionId": "factconsolidation_mh_262k/86",
+      "questionType": "factconsolidation_mh_262k",
+      "recall5": 1,
+      "recall10": 1,
+      "latencyMs": 577,
+      "retrievedSessionIds": [
+        "13598",
+        "6060",
+        "12137",
+        "1306",
+        "1878",
+        "2635",
+        "3833",
+        "7950",
+        "10306",
+        "10771"
+      ]
+    },
+    {
+      "questionId": "factconsolidation_mh_262k/87",
+      "questionType": "factconsolidation_mh_262k",
+      "recall5": 0,
+      "recall10": 0,
+      "latencyMs": 589,
+      "retrievedSessionIds": [
+        "1080",
+        "17835",
+        "1761",
+        "7425",
+        "9799",
+        "6992",
+        "12848",
+        "3871",
+        "7809",
+        "705"
+      ]
+    },
+    {
+      "questionId": "factconsolidation_mh_262k/88",
+      "questionType": "factconsolidation_mh_262k",
+      "recall5": 0,
+      "recall10": 0,
+      "latencyMs": 569,
+      "retrievedSessionIds": [
+        "17728",
+        "15989",
+        "206",
+        "4152",
+        "1073",
+        "617",
+        "1413",
+        "3339",
+        "4683",
+        "1595"
+      ]
+    },
+    {
+      "questionId": "factconsolidation_mh_262k/89",
+      "questionType": "factconsolidation_mh_262k",
+      "recall5": 0,
+      "recall10": 0,
+      "latencyMs": 596,
+      "retrievedSessionIds": [
+        "12573",
+        "13862",
+        "5389",
+        "6451",
+        "3789",
+        "17804",
+        "10200",
+        "16699",
+        "12622",
+        "5638"
+      ]
+    },
+    {
+      "questionId": "factconsolidation_mh_262k/90",
+      "questionType": "factconsolidation_mh_262k",
+      "recall5": 0,
+      "recall10": 0,
+      "latencyMs": 580,
+      "retrievedSessionIds": [
+        "10822",
+        "6662",
+        "3056",
+        "3912",
+        "469",
+        "1679",
+        "15681",
+        "10505",
+        "117",
+        "2341"
+      ]
+    },
+    {
+      "questionId": "factconsolidation_mh_262k/91",
+      "questionType": "factconsolidation_mh_262k",
+      "recall5": 0,
+      "recall10": 0,
+      "latencyMs": 607,
+      "retrievedSessionIds": [
+        "8229",
+        "4238",
+        "10998",
+        "1097",
+        "2847",
+        "3400",
+        "7318",
+        "7712",
+        "8302",
+        "10062"
+      ]
+    },
+    {
+      "questionId": "factconsolidation_mh_262k/92",
+      "questionType": "factconsolidation_mh_262k",
+      "recall5": 0,
+      "recall10": 0,
+      "latencyMs": 736,
+      "retrievedSessionIds": [
+        "2176",
+        "12731",
+        "1322",
+        "14629",
+        "3818",
+        "2566",
+        "4440",
+        "12575",
+        "5431",
+        "15048"
+      ]
+    },
+    {
+      "questionId": "factconsolidation_mh_262k/93",
+      "questionType": "factconsolidation_mh_262k",
+      "recall5": 0,
+      "recall10": 0,
+      "latencyMs": 766,
+      "retrievedSessionIds": [
+        "8288",
+        "6264",
+        "2131",
+        "4175",
+        "12177",
+        "6028",
+        "6117",
+        "17003",
+        "1470",
+        "12537"
+      ]
+    },
+    {
+      "questionId": "factconsolidation_mh_262k/94",
+      "questionType": "factconsolidation_mh_262k",
+      "recall5": 1,
+      "recall10": 1,
+      "latencyMs": 694,
+      "retrievedSessionIds": [
+        "10389",
+        "1064",
+        "17474",
+        "7662",
+        "9929",
+        "13367",
+        "18021",
+        "71",
+        "13588",
+        "112"
+      ]
+    },
+    {
+      "questionId": "factconsolidation_mh_262k/95",
+      "questionType": "factconsolidation_mh_262k",
+      "recall5": 0,
+      "recall10": 0,
+      "latencyMs": 632,
+      "retrievedSessionIds": [
+        "4947",
+        "2436",
+        "1525",
+        "5843",
+        "8615",
+        "9308",
+        "17633",
+        "17632",
+        "1",
+        "12870"
+      ]
+    },
+    {
+      "questionId": "factconsolidation_mh_262k/96",
+      "questionType": "factconsolidation_mh_262k",
+      "recall5": 0,
+      "recall10": 0,
+      "latencyMs": 657,
+      "retrievedSessionIds": [
+        "8709",
+        "10023",
+        "16305",
+        "12528",
+        "4020",
+        "6174",
+        "8795",
+        "17419",
+        "11771",
+        "14439"
+      ]
+    },
+    {
+      "questionId": "factconsolidation_mh_262k/97",
+      "questionType": "factconsolidation_mh_262k",
+      "recall5": 0,
+      "recall10": 0,
+      "latencyMs": 758,
+      "retrievedSessionIds": [
+        "8861",
+        "5892",
+        "17170",
+        "14234",
+        "14035",
+        "8600",
+        "5969",
+        "148",
+        "2762",
+        "8749"
+      ]
+    },
+    {
+      "questionId": "factconsolidation_mh_262k/98",
+      "questionType": "factconsolidation_mh_262k",
+      "recall5": 0,
+      "recall10": 0,
+      "latencyMs": 872,
+      "retrievedSessionIds": [
+        "8215",
+        "17797",
+        "16893",
+        "14345",
+        "10898",
+        "5798",
+        "6145",
+        "824",
+        "17709",
+        "8342"
+      ]
+    },
+    {
+      "questionId": "factconsolidation_mh_262k/99",
+      "questionType": "factconsolidation_mh_262k",
+      "recall5": 0,
+      "recall10": 0,
+      "latencyMs": 791,
+      "retrievedSessionIds": [
+        "11027",
+        "11090",
+        "9122",
+        "12665",
+        "2331",
+        "7912",
+        "1729",
+        "6503",
+        "3415",
+        "3632"
+      ]
+    },
+    {
+      "questionId": "factconsolidation_sh_262k/0",
+      "questionType": "factconsolidation_sh_262k",
+      "recall5": 1,
+      "recall10": 1,
+      "latencyMs": 494,
+      "retrievedSessionIds": [
+        "8054",
+        "14907",
+        "505",
+        "15044",
+        "18152",
+        "12904",
+        "6945",
+        "11366",
+        "15394",
+        "266"
+      ]
+    },
+    {
+      "questionId": "factconsolidation_sh_262k/1",
+      "questionType": "factconsolidation_sh_262k",
+      "recall5": 1,
+      "recall10": 1,
+      "latencyMs": 498,
+      "retrievedSessionIds": [
+        "15099",
+        "271",
+        "581",
+        "766",
+        "947",
+        "2487",
+        "1844",
+        "1464",
+        "4193",
+        "2752"
+      ]
+    },
+    {
+      "questionId": "factconsolidation_sh_262k/2",
+      "questionType": "factconsolidation_sh_262k",
+      "recall5": 1,
+      "recall10": 1,
+      "latencyMs": 508,
+      "retrievedSessionIds": [
+        "2690",
+        "2697",
+        "8958",
+        "9586",
+        "5672",
+        "9204",
+        "9539",
+        "15412",
+        "944",
+        "3827"
+      ]
+    },
+    {
+      "questionId": "factconsolidation_sh_262k/3",
+      "questionType": "factconsolidation_sh_262k",
+      "recall5": 1,
+      "recall10": 1,
+      "latencyMs": 505,
+      "retrievedSessionIds": [
+        "2951",
+        "16767",
+        "4896",
+        "0",
+        "12955",
+        "1",
+        "7370",
+        "2",
+        "12681",
+        "3"
+      ]
+    },
+    {
+      "questionId": "factconsolidation_sh_262k/4",
+      "questionType": "factconsolidation_sh_262k",
+      "recall5": 1,
+      "recall10": 1,
+      "latencyMs": 492,
+      "retrievedSessionIds": [
+        "6746",
+        "7636",
+        "6520",
+        "7899",
+        "3694",
+        "196",
+        "1273",
+        "408",
+        "2760",
+        "1976"
+      ]
+    },
+    {
+      "questionId": "factconsolidation_sh_262k/5",
+      "questionType": "factconsolidation_sh_262k",
+      "recall5": 1,
+      "recall10": 1,
+      "latencyMs": 491,
+      "retrievedSessionIds": [
+        "1951",
+        "14063",
+        "4776",
+        "432",
+        "2071",
+        "16558",
+        "10445",
+        "6234",
+        "14925",
+        "12214"
+      ]
+    },
+    {
+      "questionId": "factconsolidation_sh_262k/6",
+      "questionType": "factconsolidation_sh_262k",
+      "recall5": 1,
+      "recall10": 1,
+      "latencyMs": 480,
+      "retrievedSessionIds": [
+        "17004",
+        "9742",
+        "12875",
+        "9184",
+        "14297",
+        "2033",
+        "10970",
+        "601",
+        "658",
+        "3034"
+      ]
+    },
+    {
+      "questionId": "factconsolidation_sh_262k/7",
+      "questionType": "factconsolidation_sh_262k",
+      "recall5": 1,
+      "recall10": 1,
+      "latencyMs": 497,
+      "retrievedSessionIds": [
+        "16252",
+        "16987",
+        "1366",
+        "2171",
+        "3502",
+        "5784",
+        "7653",
+        "8353",
+        "10769",
+        "11715"
+      ]
+    },
+    {
+      "questionId": "factconsolidation_sh_262k/8",
+      "questionType": "factconsolidation_sh_262k",
+      "recall5": 1,
+      "recall10": 1,
+      "latencyMs": 466,
+      "retrievedSessionIds": [
+        "10513",
+        "8530",
+        "16114",
+        "16051",
+        "9823",
+        "5751",
+        "1785",
+        "1300",
+        "11101",
+        "14451"
+      ]
+    },
+    {
+      "questionId": "factconsolidation_sh_262k/9",
+      "questionType": "factconsolidation_sh_262k",
+      "recall5": 1,
+      "recall10": 1,
+      "latencyMs": 533,
+      "retrievedSessionIds": [
+        "12325",
+        "4875",
+        "14180",
+        "16478",
+        "12721",
+        "1891",
+        "3272",
+        "10",
+        "55",
+        "75"
+      ]
+    },
+    {
+      "questionId": "factconsolidation_sh_262k/10",
+      "questionType": "factconsolidation_sh_262k",
+      "recall5": 1,
+      "recall10": 1,
+      "latencyMs": 510,
+      "retrievedSessionIds": [
+        "13850",
+        "14463",
+        "2634",
+        "17459",
+        "13231",
+        "4275",
+        "6601",
+        "236",
+        "4747",
+        "5447"
+      ]
+    },
+    {
+      "questionId": "factconsolidation_sh_262k/11",
+      "questionType": "factconsolidation_sh_262k",
+      "recall5": 1,
+      "recall10": 1,
+      "latencyMs": 505,
+      "retrievedSessionIds": [
+        "8827",
+        "15445",
+        "7338",
+        "15246",
+        "372",
+        "3010",
+        "888",
+        "71",
+        "78",
+        "112"
+      ]
+    },
+    {
+      "questionId": "factconsolidation_sh_262k/12",
+      "questionType": "factconsolidation_sh_262k",
+      "recall5": 1,
+      "recall10": 1,
+      "latencyMs": 529,
+      "retrievedSessionIds": [
+        "4787",
+        "1836",
+        "8014",
+        "1183",
+        "12826",
+        "16351",
+        "8224",
+        "9146",
+        "11398",
+        "11506"
+      ]
+    },
+    {
+      "questionId": "factconsolidation_sh_262k/13",
+      "questionType": "factconsolidation_sh_262k",
+      "recall5": 1,
+      "recall10": 1,
+      "latencyMs": 527,
+      "retrievedSessionIds": [
+        "14608",
+        "7580",
+        "15256",
+        "84",
+        "2704",
+        "1452",
+        "352",
+        "872",
+        "3529",
+        "1772"
+      ]
+    },
+    {
+      "questionId": "factconsolidation_sh_262k/14",
+      "questionType": "factconsolidation_sh_262k",
+      "recall5": 1,
+      "recall10": 1,
+      "latencyMs": 495,
+      "retrievedSessionIds": [
+        "17816",
+        "9282",
+        "8980",
+        "323",
+        "3209",
+        "9654",
+        "13422",
+        "3438",
+        "3615",
+        "6527"
+      ]
+    },
+    {
+      "questionId": "factconsolidation_sh_262k/15",
+      "questionType": "factconsolidation_sh_262k",
+      "recall5": 1,
+      "recall10": 1,
+      "latencyMs": 503,
+      "retrievedSessionIds": [
+        "12773",
+        "11132",
+        "4248",
+        "13901",
+        "17917",
+        "437",
+        "4558",
+        "6800",
+        "18149",
+        "5965"
+      ]
+    },
+    {
+      "questionId": "factconsolidation_sh_262k/16",
+      "questionType": "factconsolidation_sh_262k",
+      "recall5": 1,
+      "recall10": 1,
+      "latencyMs": 485,
+      "retrievedSessionIds": [
+        "8521",
+        "183",
+        "2095",
+        "1128",
+        "5593",
+        "8145",
+        "14183",
+        "5703",
+        "9532",
+        "15"
+      ]
+    },
+    {
+      "questionId": "factconsolidation_sh_262k/17",
+      "questionType": "factconsolidation_sh_262k",
+      "recall5": 1,
+      "recall10": 1,
+      "latencyMs": 482,
+      "retrievedSessionIds": [
+        "3446",
+        "12988",
+        "636",
+        "4076",
+        "17145",
+        "6830",
+        "15493",
+        "9281",
+        "15945",
+        "13633"
+      ]
+    },
+    {
+      "questionId": "factconsolidation_sh_262k/18",
+      "questionType": "factconsolidation_sh_262k",
+      "recall5": 1,
+      "recall10": 1,
+      "latencyMs": 493,
+      "retrievedSessionIds": [
+        "2469",
+        "5009",
+        "5610",
+        "6",
+        "1138",
+        "4807",
+        "1103",
+        "7321",
+        "3973",
+        "1299"
+      ]
+    },
+    {
+      "questionId": "factconsolidation_sh_262k/19",
+      "questionType": "factconsolidation_sh_262k",
+      "recall5": 1,
+      "recall10": 1,
+      "latencyMs": 509,
+      "retrievedSessionIds": [
+        "1260",
+        "10111",
+        "519",
+        "445",
+        "1049",
+        "1187",
+        "999",
+        "4280",
+        "1665",
+        "6638"
+      ]
+    },
+    {
+      "questionId": "factconsolidation_sh_262k/20",
+      "questionType": "factconsolidation_sh_262k",
+      "recall5": 1,
+      "recall10": 1,
+      "latencyMs": 510,
+      "retrievedSessionIds": [
+        "4409",
+        "4245",
+        "14286",
+        "6611",
+        "2916",
+        "2125",
+        "2651",
+        "14346",
+        "17737",
+        "13167"
+      ]
+    },
+    {
+      "questionId": "factconsolidation_sh_262k/21",
+      "questionType": "factconsolidation_sh_262k",
+      "recall5": 1,
+      "recall10": 1,
+      "latencyMs": 508,
+      "retrievedSessionIds": [
+        "2090",
+        "3131",
+        "2681",
+        "12846",
+        "13957",
+        "9584",
+        "12665",
+        "1488",
+        "1909",
+        "14114"
+      ]
+    },
+    {
+      "questionId": "factconsolidation_sh_262k/22",
+      "questionType": "factconsolidation_sh_262k",
+      "recall5": 1,
+      "recall10": 1,
+      "latencyMs": 510,
+      "retrievedSessionIds": [
+        "7507",
+        "5371",
+        "10330",
+        "3197",
+        "9592",
+        "17529",
+        "10842",
+        "2672",
+        "17780",
+        "113"
+      ]
+    },
+    {
+      "questionId": "factconsolidation_sh_262k/23",
+      "questionType": "factconsolidation_sh_262k",
+      "recall5": 1,
+      "recall10": 1,
+      "latencyMs": 521,
+      "retrievedSessionIds": [
+        "9654",
+        "9476",
+        "4867",
+        "2340",
+        "9431",
+        "1599",
+        "12494",
+        "15549",
+        "7338",
+        "15094"
+      ]
+    },
+    {
+      "questionId": "factconsolidation_sh_262k/24",
+      "questionType": "factconsolidation_sh_262k",
+      "recall5": 1,
+      "recall10": 1,
+      "latencyMs": 488,
+      "retrievedSessionIds": [
+        "16437",
+        "16918",
+        "4351",
+        "5277",
+        "8178",
+        "15543",
+        "110",
+        "1208",
+        "2080",
+        "2555"
+      ]
+    },
+    {
+      "questionId": "factconsolidation_sh_262k/25",
+      "questionType": "factconsolidation_sh_262k",
+      "recall5": 1,
+      "recall10": 1,
+      "latencyMs": 498,
+      "retrievedSessionIds": [
+        "13391",
+        "986",
+        "1141",
+        "1196",
+        "1064",
+        "4192",
+        "1233",
+        "2712",
+        "1254",
+        "5367"
+      ]
+    },
+    {
+      "questionId": "factconsolidation_sh_262k/26",
+      "questionType": "factconsolidation_sh_262k",
+      "recall5": 1,
+      "recall10": 1,
+      "latencyMs": 525,
+      "retrievedSessionIds": [
+        "17038",
+        "443",
+        "561",
+        "2199",
+        "7135",
+        "7287",
+        "17362",
+        "867",
+        "10211",
+        "12125"
+      ]
+    },
+    {
+      "questionId": "factconsolidation_sh_262k/27",
+      "questionType": "factconsolidation_sh_262k",
+      "recall5": 1,
+      "recall10": 1,
+      "latencyMs": 514,
+      "retrievedSessionIds": [
+        "6038",
+        "7521",
+        "10649",
+        "4290",
+        "2140",
+        "7537",
+        "6730",
+        "2474",
+        "1460",
+        "11114"
+      ]
+    },
+    {
+      "questionId": "factconsolidation_sh_262k/28",
+      "questionType": "factconsolidation_sh_262k",
+      "recall5": 1,
+      "recall10": 1,
+      "latencyMs": 526,
+      "retrievedSessionIds": [
+        "6260",
+        "16928",
+        "2029",
+        "2109",
+        "5693",
+        "6316",
+        "18130",
+        "3944",
+        "115",
+        "867"
+      ]
+    },
+    {
+      "questionId": "factconsolidation_sh_262k/29",
+      "questionType": "factconsolidation_sh_262k",
+      "recall5": 1,
+      "recall10": 1,
+      "latencyMs": 503,
+      "retrievedSessionIds": [
+        "577",
+        "5659",
+        "13468",
+        "15958",
+        "14525",
+        "274",
+        "492",
+        "5109",
+        "15335",
+        "10081"
+      ]
+    },
+    {
+      "questionId": "factconsolidation_sh_262k/30",
+      "questionType": "factconsolidation_sh_262k",
+      "recall5": 1,
+      "recall10": 1,
+      "latencyMs": 484,
+      "retrievedSessionIds": [
+        "7017",
+        "129",
+        "8525",
+        "5697",
+        "426",
+        "394",
+        "3102",
+        "4475",
+        "2977",
+        "2028"
+      ]
+    },
+    {
+      "questionId": "factconsolidation_sh_262k/31",
+      "questionType": "factconsolidation_sh_262k",
+      "recall5": 1,
+      "recall10": 1,
+      "latencyMs": 505,
+      "retrievedSessionIds": [
+        "15185",
+        "4855",
+        "11758",
+        "9860",
+        "341",
+        "2326",
+        "216",
+        "442",
+        "3646",
+        "1929"
+      ]
+    },
+    {
+      "questionId": "factconsolidation_sh_262k/32",
+      "questionType": "factconsolidation_sh_262k",
+      "recall5": 1,
+      "recall10": 1,
+      "latencyMs": 497,
+      "retrievedSessionIds": [
+        "14005",
+        "2649",
+        "12183",
+        "13540",
+        "6674",
+        "2726",
+        "7894",
+        "7912",
+        "8271",
+        "10502"
+      ]
+    },
+    {
+      "questionId": "factconsolidation_sh_262k/33",
+      "questionType": "factconsolidation_sh_262k",
+      "recall5": 1,
+      "recall10": 1,
+      "latencyMs": 490,
+      "retrievedSessionIds": [
+        "10196",
+        "105",
+        "1834",
+        "13120",
+        "626",
+        "2364",
+        "397",
+        "13846",
+        "1489",
+        "3982"
+      ]
+    },
+    {
+      "questionId": "factconsolidation_sh_262k/34",
+      "questionType": "factconsolidation_sh_262k",
+      "recall5": 1,
+      "recall10": 1,
+      "latencyMs": 501,
+      "retrievedSessionIds": [
+        "16655",
+        "1713",
+        "128",
+        "312",
+        "262",
+        "1702",
+        "1492",
+        "2151",
+        "3901",
+        "5385"
+      ]
+    },
+    {
+      "questionId": "factconsolidation_sh_262k/35",
+      "questionType": "factconsolidation_sh_262k",
+      "recall5": 1,
+      "recall10": 1,
+      "latencyMs": 524,
+      "retrievedSessionIds": [
+        "306",
+        "14567",
+        "12757",
+        "3123",
+        "6973",
+        "16140",
+        "278",
+        "5628",
+        "709",
+        "1346"
+      ]
+    },
+    {
+      "questionId": "factconsolidation_sh_262k/36",
+      "questionType": "factconsolidation_sh_262k",
+      "recall5": 1,
+      "recall10": 1,
+      "latencyMs": 508,
+      "retrievedSessionIds": [
+        "13113",
+        "6652",
+        "797",
+        "7597",
+        "1533",
+        "1243",
+        "13192",
+        "5266",
+        "14456",
+        "7379"
+      ]
+    },
+    {
+      "questionId": "factconsolidation_sh_262k/37",
+      "questionType": "factconsolidation_sh_262k",
+      "recall5": 1,
+      "recall10": 1,
+      "latencyMs": 510,
+      "retrievedSessionIds": [
+        "11616",
+        "2964",
+        "8350",
+        "17241",
+        "14953",
+        "8905",
+        "432",
+        "5136",
+        "4129",
+        "18222"
+      ]
+    },
+    {
+      "questionId": "factconsolidation_sh_262k/38",
+      "questionType": "factconsolidation_sh_262k",
+      "recall5": 1,
+      "recall10": 1,
+      "latencyMs": 522,
+      "retrievedSessionIds": [
+        "9972",
+        "15948",
+        "13274",
+        "6331",
+        "16884",
+        "9211",
+        "616",
+        "1542",
+        "1798",
+        "1841"
+      ]
+    },
+    {
+      "questionId": "factconsolidation_sh_262k/39",
+      "questionType": "factconsolidation_sh_262k",
+      "recall5": 1,
+      "recall10": 1,
+      "latencyMs": 492,
+      "retrievedSessionIds": [
+        "18074",
+        "8539",
+        "103",
+        "2551",
+        "1768",
+        "956",
+        "3181",
+        "3437",
+        "12422",
+        "341"
+      ]
+    },
+    {
+      "questionId": "factconsolidation_sh_262k/40",
+      "questionType": "factconsolidation_sh_262k",
+      "recall5": 1,
+      "recall10": 1,
+      "latencyMs": 500,
+      "retrievedSessionIds": [
+        "2588",
+        "4629",
+        "14232",
+        "263",
+        "13939",
+        "15965",
+        "9597",
+        "16937",
+        "4713",
+        "15430"
+      ]
+    },
+    {
+      "questionId": "factconsolidation_sh_262k/41",
+      "questionType": "factconsolidation_sh_262k",
+      "recall5": 1,
+      "recall10": 1,
+      "latencyMs": 510,
+      "retrievedSessionIds": [
+        "4036",
+        "14389",
+        "142",
+        "536",
+        "1553",
+        "2715",
+        "3480",
+        "6387",
+        "4253",
+        "13057"
+      ]
+    },
+    {
+      "questionId": "factconsolidation_sh_262k/42",
+      "questionType": "factconsolidation_sh_262k",
+      "recall5": 1,
+      "recall10": 1,
+      "latencyMs": 538,
+      "retrievedSessionIds": [
+        "2269",
+        "8975",
+        "11202",
+        "1543",
+        "1835",
+        "3592",
+        "9434",
+        "10119",
+        "13564",
+        "14952"
+      ]
+    },
+    {
+      "questionId": "factconsolidation_sh_262k/43",
+      "questionType": "factconsolidation_sh_262k",
+      "recall5": 1,
+      "recall10": 1,
+      "latencyMs": 545,
+      "retrievedSessionIds": [
+        "3305",
+        "13904",
+        "8474",
+        "8761",
+        "14033",
+        "7659",
+        "13352",
+        "1782",
+        "1916",
+        "6865"
+      ]
+    },
+    {
+      "questionId": "factconsolidation_sh_262k/44",
+      "questionType": "factconsolidation_sh_262k",
+      "recall5": 1,
+      "recall10": 1,
+      "latencyMs": 512,
+      "retrievedSessionIds": [
+        "9058",
+        "18069",
+        "4492",
+        "6972",
+        "10180",
+        "14126",
+        "9001",
+        "10395",
+        "9171",
+        "2344"
+      ]
+    },
+    {
+      "questionId": "factconsolidation_sh_262k/45",
+      "questionType": "factconsolidation_sh_262k",
+      "recall5": 1,
+      "recall10": 1,
+      "latencyMs": 506,
+      "retrievedSessionIds": [
+        "7985",
+        "17955",
+        "3573",
+        "6123",
+        "5247",
+        "3046",
+        "7063",
+        "3238",
+        "16752",
+        "14811"
+      ]
+    },
+    {
+      "questionId": "factconsolidation_sh_262k/46",
+      "questionType": "factconsolidation_sh_262k",
+      "recall5": 1,
+      "recall10": 1,
+      "latencyMs": 523,
+      "retrievedSessionIds": [
+        "15827",
+        "13779",
+        "1161",
+        "803",
+        "3816",
+        "4082",
+        "2008",
+        "9284",
+        "4909",
+        "8640"
+      ]
+    },
+    {
+      "questionId": "factconsolidation_sh_262k/47",
+      "questionType": "factconsolidation_sh_262k",
+      "recall5": 1,
+      "recall10": 1,
+      "latencyMs": 525,
+      "retrievedSessionIds": [
+        "13765",
+        "11251",
+        "6758",
+        "5117",
+        "14415",
+        "10933",
+        "11471",
+        "1372",
+        "970",
+        "9994"
+      ]
+    },
+    {
+      "questionId": "factconsolidation_sh_262k/48",
+      "questionType": "factconsolidation_sh_262k",
+      "recall5": 1,
+      "recall10": 1,
+      "latencyMs": 524,
+      "retrievedSessionIds": [
+        "6862",
+        "7691",
+        "11387",
+        "3179",
+        "85",
+        "871",
+        "1591",
+        "5719",
+        "4241",
+        "7999"
+      ]
+    },
+    {
+      "questionId": "factconsolidation_sh_262k/49",
+      "questionType": "factconsolidation_sh_262k",
+      "recall5": 1,
+      "recall10": 1,
+      "latencyMs": 519,
+      "retrievedSessionIds": [
+        "2727",
+        "28",
+        "497",
+        "14004",
+        "4877",
+        "9197",
+        "3998",
+        "645",
+        "3328",
+        "8190"
+      ]
+    },
+    {
+      "questionId": "factconsolidation_sh_262k/50",
+      "questionType": "factconsolidation_sh_262k",
+      "recall5": 1,
+      "recall10": 1,
+      "latencyMs": 508,
+      "retrievedSessionIds": [
+        "4098",
+        "4724",
+        "837",
+        "66",
+        "731",
+        "974",
+        "792",
+        "902",
+        "4999",
+        "10888"
+      ]
+    },
+    {
+      "questionId": "factconsolidation_sh_262k/51",
+      "questionType": "factconsolidation_sh_262k",
+      "recall5": 1,
+      "recall10": 1,
+      "latencyMs": 505,
+      "retrievedSessionIds": [
+        "2964",
+        "5298",
+        "17241",
+        "11616",
+        "8350",
+        "14953",
+        "18222",
+        "15478",
+        "8905",
+        "12220"
+      ]
+    },
+    {
+      "questionId": "factconsolidation_sh_262k/52",
+      "questionType": "factconsolidation_sh_262k",
+      "recall5": 1,
+      "recall10": 1,
+      "latencyMs": 532,
+      "retrievedSessionIds": [
+        "5696",
+        "12342",
+        "17837",
+        "173",
+        "651",
+        "823",
+        "949",
+        "1257",
+        "1805",
+        "2277"
+      ]
+    },
+    {
+      "questionId": "factconsolidation_sh_262k/53",
+      "questionType": "factconsolidation_sh_262k",
+      "recall5": 1,
+      "recall10": 1,
+      "latencyMs": 515,
+      "retrievedSessionIds": [
+        "5359",
+        "15307",
+        "6531",
+        "15409",
+        "259",
+        "1010",
+        "5655",
+        "1670",
+        "1545",
+        "4092"
+      ]
+    },
+    {
+      "questionId": "factconsolidation_sh_262k/54",
+      "questionType": "factconsolidation_sh_262k",
+      "recall5": 1,
+      "recall10": 1,
+      "latencyMs": 515,
+      "retrievedSessionIds": [
+        "8047",
+        "10175",
+        "6725",
+        "13589",
+        "13998",
+        "18214",
+        "5",
+        "244",
+        "749",
+        "1369"
+      ]
+    },
+    {
+      "questionId": "factconsolidation_sh_262k/55",
+      "questionType": "factconsolidation_sh_262k",
+      "recall5": 1,
+      "recall10": 1,
+      "latencyMs": 534,
+      "retrievedSessionIds": [
+        "7463",
+        "8814",
+        "8073",
+        "8078",
+        "11555",
+        "6783",
+        "15412",
+        "2199",
+        "12096",
+        "12462"
+      ]
+    },
+    {
+      "questionId": "factconsolidation_sh_262k/56",
+      "questionType": "factconsolidation_sh_262k",
+      "recall5": 1,
+      "recall10": 1,
+      "latencyMs": 528,
+      "retrievedSessionIds": [
+        "2877",
+        "5282",
+        "2814",
+        "8245",
+        "3239",
+        "5195",
+        "6496",
+        "15152",
+        "7196",
+        "2366"
+      ]
+    },
+    {
+      "questionId": "factconsolidation_sh_262k/57",
+      "questionType": "factconsolidation_sh_262k",
+      "recall5": 1,
+      "recall10": 1,
+      "latencyMs": 508,
+      "retrievedSessionIds": [
+        "10866",
+        "382",
+        "199",
+        "757",
+        "1223",
+        "1308",
+        "7168",
+        "5209",
+        "16947",
+        "15061"
+      ]
+    },
+    {
+      "questionId": "factconsolidation_sh_262k/58",
+      "questionType": "factconsolidation_sh_262k",
+      "recall5": 1,
+      "recall10": 1,
+      "latencyMs": 522,
+      "retrievedSessionIds": [
+        "8565",
+        "1371",
+        "3128",
+        "1866",
+        "6134",
+        "310",
+        "6816",
+        "3698",
+        "5961",
+        "4600"
+      ]
+    },
+    {
+      "questionId": "factconsolidation_sh_262k/59",
+      "questionType": "factconsolidation_sh_262k",
+      "recall5": 1,
+      "recall10": 1,
+      "latencyMs": 517,
+      "retrievedSessionIds": [
+        "6701",
+        "12996",
+        "7246",
+        "15693",
+        "11031",
+        "406",
+        "3330",
+        "2219",
+        "4216",
+        "7148"
+      ]
+    },
+    {
+      "questionId": "factconsolidation_sh_262k/60",
+      "questionType": "factconsolidation_sh_262k",
+      "recall5": 1,
+      "recall10": 1,
+      "latencyMs": 497,
+      "retrievedSessionIds": [
+        "9733",
+        "13957",
+        "7415",
+        "6374",
+        "1488",
+        "3017",
+        "1909",
+        "9584",
+        "2090",
+        "14114"
+      ]
+    },
+    {
+      "questionId": "factconsolidation_sh_262k/61",
+      "questionType": "factconsolidation_sh_262k",
+      "recall5": 1,
+      "recall10": 1,
+      "latencyMs": 570,
+      "retrievedSessionIds": [
+        "2467",
+        "4612",
+        "15346",
+        "45",
+        "1408",
+        "4125",
+        "5218",
+        "6095",
+        "11385",
+        "397"
+      ]
+    },
+    {
+      "questionId": "factconsolidation_sh_262k/62",
+      "questionType": "factconsolidation_sh_262k",
+      "recall5": 1,
+      "recall10": 1,
+      "latencyMs": 513,
+      "retrievedSessionIds": [
+        "3969",
+        "2107",
+        "7618",
+        "4833",
+        "10504",
+        "13355",
+        "16625",
+        "17903",
+        "1059",
+        "3990"
+      ]
+    },
+    {
+      "questionId": "factconsolidation_sh_262k/63",
+      "questionType": "factconsolidation_sh_262k",
+      "recall5": 1,
+      "recall10": 1,
+      "latencyMs": 532,
+      "retrievedSessionIds": [
+        "8194",
+        "6297",
+        "17965",
+        "11192",
+        "1406",
+        "10501",
+        "2247",
+        "2497",
+        "2552",
+        "8888"
+      ]
+    },
+    {
+      "questionId": "factconsolidation_sh_262k/64",
+      "questionType": "factconsolidation_sh_262k",
+      "recall5": 1,
+      "recall10": 1,
+      "latencyMs": 548,
+      "retrievedSessionIds": [
+        "2502",
+        "5509",
+        "14678",
+        "10670",
+        "7911",
+        "1811",
+        "7731",
+        "12777",
+        "16694",
+        "5037"
+      ]
+    },
+    {
+      "questionId": "factconsolidation_sh_262k/65",
+      "questionType": "factconsolidation_sh_262k",
+      "recall5": 1,
+      "recall10": 1,
+      "latencyMs": 553,
+      "retrievedSessionIds": [
+        "3418",
+        "5617",
+        "12024",
+        "17349",
+        "16901",
+        "509",
+        "724",
+        "1314",
+        "1133",
+        "4921"
+      ]
+    },
+    {
+      "questionId": "factconsolidation_sh_262k/66",
+      "questionType": "factconsolidation_sh_262k",
+      "recall5": 1,
+      "recall10": 1,
+      "latencyMs": 528,
+      "retrievedSessionIds": [
+        "15930",
+        "17372",
+        "5515",
+        "308",
+        "8025",
+        "6946",
+        "882",
+        "14599",
+        "12927",
+        "3342"
+      ]
+    },
+    {
+      "questionId": "factconsolidation_sh_262k/67",
+      "questionType": "factconsolidation_sh_262k",
+      "recall5": 1,
+      "recall10": 1,
+      "latencyMs": 544,
+      "retrievedSessionIds": [
+        "9082",
+        "11062",
+        "1487",
+        "1690",
+        "5433",
+        "480",
+        "2139",
+        "1900",
+        "2154",
+        "6855"
+      ]
+    },
+    {
+      "questionId": "factconsolidation_sh_262k/68",
+      "questionType": "factconsolidation_sh_262k",
+      "recall5": 1,
+      "recall10": 1,
+      "latencyMs": 534,
+      "retrievedSessionIds": [
+        "1573",
+        "15936",
+        "7260",
+        "10913",
+        "58",
+        "3012",
+        "4",
+        "5396",
+        "941",
+        "7"
+      ]
+    },
+    {
+      "questionId": "factconsolidation_sh_262k/69",
+      "questionType": "factconsolidation_sh_262k",
+      "recall5": 1,
+      "recall10": 1,
+      "latencyMs": 524,
+      "retrievedSessionIds": [
+        "12338",
+        "13995",
+        "4521",
+        "7477",
+        "16739",
+        "576",
+        "2784",
+        "3583",
+        "2591",
+        "5539"
+      ]
+    },
+    {
+      "questionId": "factconsolidation_sh_262k/70",
+      "questionType": "factconsolidation_sh_262k",
+      "recall5": 1,
+      "recall10": 1,
+      "latencyMs": 547,
+      "retrievedSessionIds": [
+        "6656",
+        "10493",
+        "375",
+        "1704",
+        "3278",
+        "3691",
+        "4366",
+        "5140",
+        "5680",
+        "6318"
+      ]
+    },
+    {
+      "questionId": "factconsolidation_sh_262k/71",
+      "questionType": "factconsolidation_sh_262k",
+      "recall5": 1,
+      "recall10": 1,
+      "latencyMs": 530,
+      "retrievedSessionIds": [
+        "17023",
+        "7489",
+        "8850",
+        "17634",
+        "5953",
+        "8615",
+        "9729",
+        "12191",
+        "17468",
+        "664"
+      ]
+    },
+    {
+      "questionId": "factconsolidation_sh_262k/72",
+      "questionType": "factconsolidation_sh_262k",
+      "recall5": 1,
+      "recall10": 1,
+      "latencyMs": 557,
+      "retrievedSessionIds": [
+        "1147",
+        "8413",
+        "11393",
+        "10912",
+        "10160",
+        "10341",
+        "9978",
+        "3410",
+        "7008",
+        "7211"
+      ]
+    },
+    {
+      "questionId": "factconsolidation_sh_262k/73",
+      "questionType": "factconsolidation_sh_262k",
+      "recall5": 1,
+      "recall10": 1,
+      "latencyMs": 567,
+      "retrievedSessionIds": [
+        "18",
+        "5111",
+        "806",
+        "11666",
+        "10621",
+        "6898",
+        "14645",
+        "11512",
+        "4489",
+        "13312"
+      ]
+    },
+    {
+      "questionId": "factconsolidation_sh_262k/74",
+      "questionType": "factconsolidation_sh_262k",
+      "recall5": 1,
+      "recall10": 1,
+      "latencyMs": 538,
+      "retrievedSessionIds": [
+        "9116",
+        "16895",
+        "6362",
+        "14999",
+        "963",
+        "7352",
+        "9486",
+        "667",
+        "3641",
+        "3674"
+      ]
+    },
+    {
+      "questionId": "factconsolidation_sh_262k/75",
+      "questionType": "factconsolidation_sh_262k",
+      "recall5": 1,
+      "recall10": 1,
+      "latencyMs": 514,
+      "retrievedSessionIds": [
+        "14773",
+        "10519",
+        "248",
+        "438",
+        "1022",
+        "433",
+        "3324",
+        "4372",
+        "3591",
+        "801"
+      ]
+    },
+    {
+      "questionId": "factconsolidation_sh_262k/76",
+      "questionType": "factconsolidation_sh_262k",
+      "recall5": 1,
+      "recall10": 1,
+      "latencyMs": 560,
+      "retrievedSessionIds": [
+        "2199",
+        "15540",
+        "2562",
+        "7463",
+        "7486",
+        "12636",
+        "8814",
+        "561",
+        "10211",
+        "13757"
+      ]
+    },
+    {
+      "questionId": "factconsolidation_sh_262k/77",
+      "questionType": "factconsolidation_sh_262k",
+      "recall5": 1,
+      "recall10": 1,
+      "latencyMs": 518,
+      "retrievedSessionIds": [
+        "11454",
+        "16897",
+        "15689",
+        "15778",
+        "10167",
+        "3444",
+        "1615",
+        "1139",
+        "2130",
+        "1204"
+      ]
+    },
+    {
+      "questionId": "factconsolidation_sh_262k/78",
+      "questionType": "factconsolidation_sh_262k",
+      "recall5": 1,
+      "recall10": 1,
+      "latencyMs": 564,
+      "retrievedSessionIds": [
+        "3531",
+        "11073",
+        "10544",
+        "11149",
+        "15870",
+        "16368",
+        "4731",
+        "12587",
+        "7334",
+        "8332"
+      ]
+    },
+    {
+      "questionId": "factconsolidation_sh_262k/79",
+      "questionType": "factconsolidation_sh_262k",
+      "recall5": 1,
+      "recall10": 1,
+      "latencyMs": 537,
+      "retrievedSessionIds": [
+        "17090",
+        "7108",
+        "1360",
+        "1746",
+        "2807",
+        "1677",
+        "4149",
+        "3317",
+        "3864",
+        "10930"
+      ]
+    },
+    {
+      "questionId": "factconsolidation_sh_262k/80",
+      "questionType": "factconsolidation_sh_262k",
+      "recall5": 1,
+      "recall10": 1,
+      "latencyMs": 533,
+      "retrievedSessionIds": [
+        "5988",
+        "17757",
+        "8026",
+        "12730",
+        "11909",
+        "3869",
+        "1616",
+        "12197",
+        "2248",
+        "13163"
+      ]
+    },
+    {
+      "questionId": "factconsolidation_sh_262k/81",
+      "questionType": "factconsolidation_sh_262k",
+      "recall5": 1,
+      "recall10": 1,
+      "latencyMs": 551,
+      "retrievedSessionIds": [
+        "7441",
+        "10060",
+        "14829",
+        "123",
+        "5059",
+        "7556",
+        "14163",
+        "5963",
+        "8926",
+        "6260"
+      ]
+    },
+    {
+      "questionId": "factconsolidation_sh_262k/82",
+      "questionType": "factconsolidation_sh_262k",
+      "recall5": 1,
+      "recall10": 1,
+      "latencyMs": 538,
+      "retrievedSessionIds": [
+        "13580",
+        "14923",
+        "11923",
+        "16455",
+        "15569",
+        "11240",
+        "1894",
+        "761",
+        "987",
+        "1166"
+      ]
+    },
+    {
+      "questionId": "factconsolidation_sh_262k/83",
+      "questionType": "factconsolidation_sh_262k",
+      "recall5": 1,
+      "recall10": 1,
+      "latencyMs": 516,
+      "retrievedSessionIds": [
+        "10732",
+        "12512",
+        "999",
+        "1870",
+        "8376",
+        "1527",
+        "966",
+        "3793",
+        "5295",
+        "7109"
+      ]
+    },
+    {
+      "questionId": "factconsolidation_sh_262k/84",
+      "questionType": "factconsolidation_sh_262k",
+      "recall5": 1,
+      "recall10": 1,
+      "latencyMs": 519,
+      "retrievedSessionIds": [
+        "12612",
+        "15312",
+        "11936",
+        "6574",
+        "16990",
+        "3313",
+        "4808",
+        "6071",
+        "9442",
+        "13496"
+      ]
+    },
+    {
+      "questionId": "factconsolidation_sh_262k/85",
+      "questionType": "factconsolidation_sh_262k",
+      "recall5": 1,
+      "recall10": 1,
+      "latencyMs": 535,
+      "retrievedSessionIds": [
+        "14587",
+        "4044",
+        "17650",
+        "4154",
+        "6244",
+        "16901",
+        "17400",
+        "2980",
+        "4524",
+        "15463"
+      ]
+    },
+    {
+      "questionId": "factconsolidation_sh_262k/86",
+      "questionType": "factconsolidation_sh_262k",
+      "recall5": 1,
+      "recall10": 1,
+      "latencyMs": 624,
+      "retrievedSessionIds": [
+        "16075",
+        "15100",
+        "9583",
+        "2597",
+        "9709",
+        "8736",
+        "12656",
+        "1491",
+        "5235",
+        "8988"
+      ]
+    },
+    {
+      "questionId": "factconsolidation_sh_262k/87",
+      "questionType": "factconsolidation_sh_262k",
+      "recall5": 1,
+      "recall10": 1,
+      "latencyMs": 525,
+      "retrievedSessionIds": [
+        "10352",
+        "11318",
+        "255",
+        "1123",
+        "3475",
+        "4061",
+        "8124",
+        "394",
+        "8639",
+        "12120"
+      ]
+    },
+    {
+      "questionId": "factconsolidation_sh_262k/88",
+      "questionType": "factconsolidation_sh_262k",
+      "recall5": 1,
+      "recall10": 1,
+      "latencyMs": 532,
+      "retrievedSessionIds": [
+        "8286",
+        "9903",
+        "12738",
+        "3936",
+        "12760",
+        "7229",
+        "10625",
+        "14377",
+        "11147",
+        "14707"
+      ]
+    },
+    {
+      "questionId": "factconsolidation_sh_262k/89",
+      "questionType": "factconsolidation_sh_262k",
+      "recall5": 1,
+      "recall10": 1,
+      "latencyMs": 555,
+      "retrievedSessionIds": [
+        "17566",
+        "16818",
+        "8",
+        "16913",
+        "9",
+        "11020",
+        "11",
+        "8056",
+        "12",
+        "2398"
+      ]
+    },
+    {
+      "questionId": "factconsolidation_sh_262k/90",
+      "questionType": "factconsolidation_sh_262k",
+      "recall5": 1,
+      "recall10": 1,
+      "latencyMs": 597,
+      "retrievedSessionIds": [
+        "13584",
+        "1070",
+        "43",
+        "6551",
+        "6228",
+        "8346",
+        "8369",
+        "1446",
+        "2359",
+        "3262"
+      ]
+    },
+    {
+      "questionId": "factconsolidation_sh_262k/91",
+      "questionType": "factconsolidation_sh_262k",
+      "recall5": 1,
+      "recall10": 1,
+      "latencyMs": 527,
+      "retrievedSessionIds": [
+        "956",
+        "6465",
+        "3164",
+        "9302",
+        "15145",
+        "5592",
+        "16260",
+        "3457",
+        "3111",
+        "3061"
+      ]
+    },
+    {
+      "questionId": "factconsolidation_sh_262k/92",
+      "questionType": "factconsolidation_sh_262k",
+      "recall5": 1,
+      "recall10": 1,
+      "latencyMs": 524,
+      "retrievedSessionIds": [
+        "1143",
+        "8447",
+        "1232",
+        "1864",
+        "13390",
+        "6066",
+        "17559",
+        "1982",
+        "778",
+        "4854"
+      ]
+    },
+    {
+      "questionId": "factconsolidation_sh_262k/93",
+      "questionType": "factconsolidation_sh_262k",
+      "recall5": 1,
+      "recall10": 1,
+      "latencyMs": 533,
+      "retrievedSessionIds": [
+        "3477",
+        "9497",
+        "132",
+        "208",
+        "1358",
+        "2168",
+        "3356",
+        "2073",
+        "2927",
+        "3401"
+      ]
+    },
+    {
+      "questionId": "factconsolidation_sh_262k/94",
+      "questionType": "factconsolidation_sh_262k",
+      "recall5": 1,
+      "recall10": 1,
+      "latencyMs": 569,
+      "retrievedSessionIds": [
+        "11755",
+        "10009",
+        "15166",
+        "1712",
+        "4056",
+        "5810",
+        "6739",
+        "7680",
+        "8826",
+        "10879"
+      ]
+    },
+    {
+      "questionId": "factconsolidation_sh_262k/95",
+      "questionType": "factconsolidation_sh_262k",
+      "recall5": 1,
+      "recall10": 1,
+      "latencyMs": 557,
+      "retrievedSessionIds": [
+        "2",
+        "17798",
+        "15175",
+        "4823",
+        "13938",
+        "2548",
+        "10595",
+        "8845",
+        "12433",
+        "116"
+      ]
+    },
+    {
+      "questionId": "factconsolidation_sh_262k/96",
+      "questionType": "factconsolidation_sh_262k",
+      "recall5": 1,
+      "recall10": 1,
+      "latencyMs": 522,
+      "retrievedSessionIds": [
+        "459",
+        "5291",
+        "16117",
+        "1175",
+        "699",
+        "465",
+        "5147",
+        "6856",
+        "3855",
+        "7949"
+      ]
+    },
+    {
+      "questionId": "factconsolidation_sh_262k/97",
+      "questionType": "factconsolidation_sh_262k",
+      "recall5": 1,
+      "recall10": 1,
+      "latencyMs": 539,
+      "retrievedSessionIds": [
+        "2573",
+        "11444",
+        "250",
+        "2227",
+        "3441",
+        "8215",
+        "8219",
+        "17797",
+        "5044",
+        "15805"
+      ]
+    },
+    {
+      "questionId": "factconsolidation_sh_262k/98",
+      "questionType": "factconsolidation_sh_262k",
+      "recall5": 1,
+      "recall10": 1,
+      "latencyMs": 536,
+      "retrievedSessionIds": [
+        "4131",
+        "13365",
+        "4895",
+        "4841",
+        "16278",
+        "16724",
+        "1892",
+        "2528",
+        "4820",
+        "4908"
+      ]
+    },
+    {
+      "questionId": "factconsolidation_sh_262k/99",
+      "questionType": "factconsolidation_sh_262k",
+      "recall5": 1,
+      "recall10": 1,
+      "latencyMs": 549,
+      "retrievedSessionIds": [
+        "11918",
+        "6523",
+        "6076",
+        "8109",
+        "1353",
+        "431",
+        "1660",
+        "859",
+        "3423",
+        "3332"
+      ]
+    }
+  ],
+  "notes": "Retrieval proxy, not QA accuracy: answer_hit@k = a retrieved item contains a gold answer verbatim (case-insensitive). No evidence labels exist, so recall_all and NDCG are not computed. Questions whose answer is absent from the context are dropped. FactConsolidation: one item per numbered fact, timestamps increasing with the fact number. Other sources: blank-line passages up to 1,500 characters. Runs executed on one machine, possibly concurrently with other runs."
+}

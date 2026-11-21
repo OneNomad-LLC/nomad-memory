@@ -37,6 +37,18 @@ The plan, with what was left out and why, is `docs/plans/production-memory-lesso
   `npx` installs. The boot log printed `~/.cache/huggingface`, which was never where the model
   went; it prints the real path now.
 
+- **Benchmarks on open, current datasets, reported as retrieval.** LongMemEval S and M
+  (session and turn level), BEAM and MemoryAgentBench, scored with recall_all@5/10, NDCG@10
+  and recall_any@5/10 (answer containment for MemoryAgentBench, which labels no evidence),
+  with p50/p95 write and read latency, retrieved-context tokens per query and N-run standard
+  deviation in every result file. LongMemEval abstention questions are excluded from retrieval
+  scoring, as in the official evaluation. `npm run bench:qa` grades QA accuracy with a
+  configurable Claude model (default `claude-opus-5-5`, key from `ANTHROPIC_API_KEY`) against
+  a no-memory full-context baseline; it has not been run yet. Results and methodology are in
+  the README and `BENCHMARKS.md`. The headline LongMemEval number changes meaning: the old
+  96.8% / 98.8% was recall_any with abstention questions included; this branch measures 95.1% /
+  99.2% recall_any and 84.0% / 93.6% recall_all on S at session level.
+
 ### Changed
 
 - **Extraction cites its sources.** `memory-extract` numbers the messages it sends the LLM and

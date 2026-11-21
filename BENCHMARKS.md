@@ -1,201 +1,193 @@
 # przm Memory Benchmarks — Methodology Reference
 
-This is the deep technical reference for przm Memory's benchmark suite. The short version with results lives in the [README](README.md#benchmarks). This document covers what each benchmark measures, how it computes its numbers, and how to reproduce them.
+The short version with results lives in the [README](README.md#benchmarks). This document says
+what each benchmark measures, how the numbers are computed, and how to reproduce them.
 
 ## Contents
 
-- [One-command run](#one-command-run)
-- [Result files](#result-files)
-- [LoCoMo](#locomo)
+- [What we measure, and what we don't](#what-we-measure-and-what-we-dont)
+- [Datasets](#datasets)
+- [Running](#running)
 - [LongMemEval](#longmemeval)
-- [Engram synthetic suite](#engram-synthetic-suite)
-- [Ingest throughput](#ingest-throughput)
-- [Query latency](#query-latency)
-- [Hardware notes](#hardware-notes)
-- [Known caveats](#known-caveats)
+- [BEAM](#beam)
+- [MemoryAgentBench](#memoryagentbench)
+- [QA accuracy](#qa-accuracy)
+- [Reporting norms](#reporting-norms)
+- [Result files](#result-files)
+- [Operational benchmarks](#operational-benchmarks)
+- [Why not LoCoMo](#why-not-locomo)
 
-## One-command run
+## What we measure, and what we don't
+
+Two different things get called "memory benchmark scores":
+
+- **Retrieval.** Did the evidence land in the top K results? Computed from the dataset's
+  evidence labels, no model in the loop, deterministic up to the run-to-run effects noted
+  below. This is what przm-memory itself does, and what we publish.
+- **QA accuracy.** Did a model, reading what was retrieved, answer correctly, as judged by a
+  grader model? This depends on the answer model, the grader model and the grading prompt as
+  much as on memory. The harness for it is here (`npm run bench:qa`), but we have not
+  published QA numbers yet.
+
+Retrieval recall is not QA accuracy, and we don't report one as the other.
+
+## Datasets
+
+All open source, fetched by `bash benchmarks/download-datasets.sh [lme] [lme-m] [beam] [mab]`
+into `benchmarks/data/` (git-ignored). With no arguments it fetches `lme`, `beam` and `mab`;
+`lme-m` is 2.7 GB and must be named.
+
+| Dataset | Source | Licence |
+|---|---|---|
+| LongMemEval S and M, cleaned (Sep 2025) | [xiaowu0162/longmemeval-cleaned](https://huggingface.co/datasets/xiaowu0162/longmemeval-cleaned) | MIT |
+| BEAM 100K, 500K, 1M | [mohammadtavakoli78/BEAM](https://github.com/mohammadtavakoli78/BEAM) | code MIT, data CC BY-SA 4.0 |
+| MemoryAgentBench | [ai-hyz/MemoryAgentBench](https://huggingface.co/datasets/ai-hyz/MemoryAgentBench) | MIT |
+
+## Running
 
 ```bash
-git clone https://github.com/OneNomad-LLC/przm-memory.git
-cd przm-memory
-npm install
-bash benchmarks/download-datasets.sh
-npm run bench:all
+npm run bench:longmemeval                                        # S, session level
+npm run bench:longmemeval -- --granularity turn                  # S, turn level
+npm run bench:longmemeval -- --variant m --per-type 20           # M, first 20 of each type
+npm run bench:beam -- --size 100K --runs 3
+npm run bench:mab -- --split Conflict_Resolution --runs 3
+npm run bench:mab -- --split Accurate_Retrieval
 ```
 
-`bench:all` runs every benchmark sequentially. Each child writes a JSON file into `benchmarks/results/`, and the aggregator prints a consolidated table at the end. If a dataset is missing, that bench is skipped (not failed) so partial runs are valid.
-
-The downloader is idempotent — re-running skips datasets already on disk. Pass `--force` to redownload, or `locomo` / `lme` to fetch only one.
-
-## Result files
-
-Every benchmark writes `benchmarks/results/<name>-<iso-timestamp>.json`. The schema:
-
-```json
-{
-  "benchmark": "locomo",
-  "version": "1.1.0",
-  "commit": "abc1234",
-  "config": { "embeddingModel": "...", "useRerank": false, "topK": 10 },
-  "ranAt": "2026-05-12T18:31:04.221Z",
-  "durationMs": 184221,
-  "results": {
-    "recall@5":  0.831,
-    "recall@10": 0.920,
-    "latencyMs": { "p50": 31, "p95": 89, "p99": 142, "avg": 38 }
-  },
-  "perCategory": {
-    "single-hop":         { "n": 411, "recall@5": 0.78, "recall@10": 0.87, "latencyMs": { ... } },
-    "temporal":           { "n": 321, "recall@5": 0.82, "recall@10": 0.91, "latencyMs": { ... } },
-    "temporal-inference": { "n": 250, "recall@5": 0.61, "recall@10": 0.74, "latencyMs": { ... } },
-    "open-domain":        { "n": 480, "recall@5": 0.88, "recall@10": 0.94, "latencyMs": { ... } },
-    "adversarial":        { "n": 524, "recall@5": 0.89, "recall@10": 0.95, "latencyMs": { ... } }
-  }
-}
-```
-
-The exact key set varies per benchmark. Latency keys are omitted on benchmarks that don't track per-query latency. Metrics not computed are absent rather than reported as zero.
-
-JSON files are gitignored. Commit the run summary in stdout or copy a JSON into a release-notes artefact if you want to pin a specific run.
-
-## LoCoMo
-
-**What it is.** [Snap Research's LoCoMo](https://github.com/snap-research/locomo) — 1,986 multi-hop QA pairs across 10 long synthetic conversations. Each QA pair lists evidence dialog IDs (e.g. `D5:2`) that must appear in the retrieved sessions for a hit.
-
-**What we score.** Recall@5 and Recall@10. A retrieved session counts as a hit if it contains any of the evidence dialog IDs for the question.
-
-**Categories.**
-- `single-hop` — answer in one session
-- `temporal` — answer involves dates / times
-- `temporal-inference` — answer requires reasoning about time
-- `open-domain` — answer requires synthesising across sessions
-- `adversarial` — questions designed to trigger plausible-but-wrong matches
-
-**How we ingest.** Each session is concatenated into a single document, embedded with [`all-MiniLM-L6-v2`](https://huggingface.co/Xenova/all-MiniLM-L6-v2), and saved with the original session timestamp (so temporal-inference queries can use the time prefix). Sessions longer than the chunker threshold are split into sub-chunks; the parent keeps the full text for keyword search.
-
-**How we query.** Each QA pair runs through `search()` with the full hybrid pipeline — vector + keyword + temporal + spreading activation. `--rerank` enables LLM re-ranking via `selectRelevant()` (requires `OPENROUTER_API_KEY`); off by default.
-
-**Run it.**
-```bash
-npm run bench:download                  # fetches the dataset
-npm run bench:locomo                    # full 1,986 QA pairs
-npm run bench:locomo -- --limit 200     # quick subset
-npm run bench:locomo -- --rerank        # with LLM re-rank
-npm run bench:locomo -- --verbose       # per-question misses
-```
-
-**Runtime.** ~3–5 minutes on an M-series Mac, ~8–12 minutes on a typical Linux laptop.
-
-**Paper / source.** [Maharana et al., 2024 — "Evaluating Very Long-Term Conversational Memory of LLM Agents"](https://arxiv.org/abs/2402.17753).
+Common flags: `--runs N` repeats the whole run and reports mean and standard deviation;
+`--limit N` and `--per-type N` (LongMemEval) and `--chats N` (BEAM) take a fixed, deterministic
+subset. Every run stores each corpus in a fresh local store (LanceDB, file backend forced) and
+calls the same `search()` the MCP server calls, top 10, no reranker, no API key.
 
 ## LongMemEval
 
-**What it is.** [LongMemEval](https://huggingface.co/datasets/xiaowu0162/longmemeval-cleaned) — 500 questions across six types (single-session-user, single-session-assistant, single-session-preference, temporal-reasoning, multi-session, knowledge-update). Each question carries on average ~53 candidate sessions, only a subset of which contain the answer.
+[Wu et al., ICLR 2025](https://arxiv.org/abs/2410.10813). 500 questions over a per-question
+haystack of past chat sessions: about 115K tokens in S, about 1.5M tokens in M. M is far past
+any model's context window, so it tests retrieval rather than reading.
 
-**What we score.** Recall@5, Recall@10, NDCG@5, NDCG@10. Recall is binary per question — did we surface at least one answer session in the top K?
+- **Abstention questions (the 30 `_abs` ids) are excluded from retrieval scoring**, as in the
+  official retrieval evaluation: their labelled sessions don't hold an answer.
+- **Session level:** one item per session; evidence is `answer_session_ids`. The first 2,000
+  characters of each session are embedded (bge-small reads at most 512 tokens); keyword
+  search sees the whole session.
+- **Turn level:** one item per turn; evidence is the turns marked `has_answer`. Questions with
+  no such turn are excluded and counted in the result file.
+- **Metrics:** recall_all@5 and @10 (every evidence item is in the top K), NDCG@10 (binary
+  relevance, deduplicated ranking), and recall_any@5 and @10 (at least one evidence item),
+  kept for continuity with numbers this project published before.
+- Each question gets its own store holding only its haystack, and one query runs against it,
+  so a LongMemEval run is deterministic.
 
-**How we ingest.** Each session is concatenated (`role: content` per turn), embedded, and saved with its session timestamp. One isolated storage per question (matches MemPalace's methodology).
+## BEAM
 
-**How we query.** Same hybrid pipeline as LoCoMo. Top-10 results map back to session IDs via the `source` field.
+[Tavakoli et al., ICLR 2026](https://arxiv.org/abs/2510.27246). Conversations of 128K to 10M
+tokens with probing questions in ten categories: abstention, contradiction resolution, event
+ordering, information extraction, instruction following, knowledge update, multi-session
+reasoning, preference following, summarisation, temporal reasoning. We run 100K, 500K and 1M
+(10M is not run).
 
-**Run it.**
+- One item per message; its source is the message id.
+- **Evidence** is the question's `source_chat_ids`, or the `chat_id: N` entries in its
+  `conversation_references`. Questions that name no evidence messages (all abstention
+  questions, and many others) can't be scored for retrieval and are left to QA; the result
+  file counts them.
+- Metrics as for LongMemEval. All questions of a chat run against one store, and search bumps
+  recall counts as it goes, so later questions see slightly different scores; that is why
+  BEAM runs are repeated.
+
+## MemoryAgentBench
+
+[Hu et al., ICLR 2026](https://arxiv.org/abs/2507.05257). Two splits:
+
+- **Conflict_Resolution** (FactConsolidation, single-hop and multi-hop, 6K to 262K tokens):
+  numbered facts in which a later fact overrides an earlier one. One item per fact, timestamps
+  increasing with the fact number.
+- **Accurate_Retrieval** (RULER QA and EventQA): long documents split on blank lines into
+  passages of up to 1,500 characters. Its LongMemEval rows are skipped; the LongMemEval
+  benchmark covers them. EventQA can't be scored this way: its gold answers are paraphrased
+  event descriptions that appear verbatim in the book for 3 of 1,500 questions, so the
+  published Accurate_Retrieval numbers are RULER QA only (`--sources
+  ruler_qa1_197K,ruler_qa2_421K`).
+
+The dataset labels no evidence passages, so retrieval is scored as **answer_hit@5 and @10**:
+does a retrieved item contain a gold answer verbatim (case-insensitive). That is a weaker proxy
+than recall over labelled evidence. An unrelated item can contain the answer string, and in
+FactConsolidation the overridden fact contains the old answer, not the gold one, so a hit does
+not show the system preferred the newer fact. Questions whose answer never appears in the
+context can't be scored this way; they are dropped and counted.
+
+## QA accuracy
+
 ```bash
-npm run bench:download
-npm run bench:longmemeval
-npm run bench:longmemeval -- --limit 50
-npm run bench:longmemeval -- --rerank
+ANTHROPIC_API_KEY=... npm run bench:qa -- --benchmark lme-s --mode memory --runs 3
+ANTHROPIC_API_KEY=... npm run bench:qa -- --benchmark lme-s --mode full-context --runs 3
+ANTHROPIC_API_KEY=... npm run bench:qa -- --benchmark beam --size 100K --mode memory --runs 3
+ANTHROPIC_API_KEY=... npm run bench:qa -- --benchmark mab-cr --mode full-context --runs 3
+npm run bench:qa -- --benchmark lme-s --dry-run      # build the prompts, call nothing
 ```
 
-**Runtime.** ~6–10 minutes on an M-series Mac for the full 500. The dataset is ~277 MB — first download is the slow part.
+- **Memory mode:** the answer model reads the top 10 items `search()` returned.
+  **Full-context mode** is the no-memory baseline: it reads the whole history (questions whose
+  history exceeds 900K tokens are skipped).
+- **Models:** `--answer-model` and `--grader-model`, both defaulting to `claude-opus-5-5`, with
+  `--answer-effort` (default `medium`) and `--grader-effort` (default `low`). The key comes
+  from `ANTHROPIC_API_KEY`. Refusals count as incorrect; no server-side fallback is used, so
+  every answer and grade comes from the named models.
+- **Grading prompts** are adapted from LongMemEval's official per-type prompts (with its
+  off-by-one rule for temporal questions, its knowledge-update and preference rules, and its
+  abstention prompt; abstention questions are included in QA). BEAM is graded as a binary pass
+  on the dataset's rubric, where the official BEAM scoring grades each rubric item.
+  MemoryAgentBench uses the default prompt.
+- Every result file records the answer and grader models, efforts and the full prompts.
+- **Scores from a Claude grader are not directly comparable with numbers graded by the
+  official gpt-4o graders.**
 
-**Paper.** [Wu et al., 2024 — "LongMemEval: Benchmarking Chat Assistants on Long-Term Interactive Memory"](https://arxiv.org/abs/2410.10813).
+## Reporting norms
 
-## Engram synthetic suite
+Every published number states: the run count and the standard deviation across runs, p50 and
+p95 latency for writes and reads, retrieved-context tokens per query, the embedding model
+(`Xenova/bge-small-en-v1.5`, 384 dimensions, CPU), and the hardware. Definitions:
 
-**What it is.** A self-contained 15-question battery covering single-fact recall, preferences, temporal reasoning, knowledge updates, and adversarial / distractor resistance. No dataset download required.
+- **Write latency:** per item, its embedding time plus its share of the batched store write.
+  The harness writes straight to storage, so this excludes the ingest path's KG extraction,
+  chunking and taxonomy work (see [Ingest throughput](#ingest-throughput)).
+- **Read latency:** one `search()` call, top 10.
+- **Context tokens per query:** the tokens (four characters a token) of everything retrieved,
+  which is what an answer model would read.
+- Runs that execute at the same time on one machine slow each other down; result files say so,
+  and latency from such runs is an upper bound.
 
-**Why we have it.** Fast (~30 sec) regression signal. Catches obvious breakage in the retrieval pipeline without waiting on LoCoMo / LongMemEval to finish. Used as the pre-merge gate locally — exits non-zero when R@5 drops below 70%.
+## Result files
 
-**Categories.**
-- `single-fact` — basic recall (`What does the user do for work?`)
-- `preference` — stable preferences (`What language does the user prefer?`)
-- `temporal` — time-anchored events (`What incident happened in December 2025?`)
-- `knowledge-update` — corrected / updated facts
-- `adversarial` — distractor resistance (`Does the user use Rust?` → must surface "decided against")
+Each run writes `benchmarks/results/<benchmark>-<timestamp>.json` (git-ignored); the ones we
+publish are copied to `benchmarks/results/published/`. The envelope: `benchmark`, `version`,
+`commit`, `config` (dataset, subset, embedding model, top K, run count, hardware), `results`
+(per metric `{ mean, std }`, `readMs.p50` and friends, and the raw per-run summaries),
+`perCategory`, `perQuestion` (first run) and `notes`.
 
-**Negative resistance.** Some test cases declare `negativeContent` — substrings that must *not* appear in the top results. Tracked separately from recall.
+Files under `published/` dated before 2026-11 report recall_any with abstention questions
+included, under an older harness; they are kept as history, not compared with current ones.
 
-**Run it.**
-```bash
-npm run bench                # standard
-npm run bench:verbose        # per-question status
-```
+## Operational benchmarks
 
-## Ingest throughput
+### Synthetic suite
 
-**What it measures.** End-to-end ingest path — `wal.ingest()` including embedding, chunking, and storage. KG extraction is skipped (would require `OPENROUTER_API_KEY` and isn't on the critical write path). The benchmark waits for background side-effects to drain before stopping the clock, so reported throughput is "fully persisted" not "queued."
+`npm run bench`: a 15-question smoke test, no download. Its scores move between runs of
+identical code (R@5 between 73% and 80%) because search bumps recall counts in the background
+while later questions run, so it is a quick check, not evidence.
 
-**Modes.**
-- `cold` — fresh data dir, time N writes from empty
-- `warm` — pre-load N chunks, then time another N (steady-state numbers)
+### Ingest throughput
 
-**Output.** Chunks/sec, ms/chunk, RSS after the run.
+`npm run bench:throughput` pushes N synthetic chunks (default 10,000) through `wal.ingest()` and
+reports chunks per second, cold and warm. KG extraction is skipped to stay key-free.
 
-**Run it.**
-```bash
-npm run bench:throughput                              # default: 10,000 chunks, both modes
-npm run bench:throughput -- --chunks 5000             # smaller run
-npm run bench:throughput -- --mode cold               # cold only
-npm run bench:throughput -- --batch 100               # larger ingest batch
-```
+### Query latency
 
-**What it does not measure.** Postgres backend, KG extraction, daily-entry append, real LLM-based extraction. These are documented separately. The number here is the floor — adding KG extraction with an LLM available subtracts roughly 30–50%, depending on model latency.
+`npm run bench:latency` loads N synthetic chunks and reports p50, p95 and p99 of `search()` per
+query length bucket.
 
-## Query latency
+## Why not LoCoMo
 
-**What it measures.** Wall-clock around `search()` — the same call path that `engram-search` uses at the MCP boundary. The corpus is pre-seeded with N synthetic chunks, then M queries run sequentially. Top-K = 10 by default.
-
-**Query buckets.** Latency varies with query length, so we report per-bucket percentiles:
-- `short` — 1–3 word keyword queries
-- `medium` — single-sentence natural-language questions
-- `long` — multi-clause questions that stress the keyword + temporal layers
-
-**Output.** p50 / p95 / p99 / avg per bucket and overall.
-
-**Run it.**
-```bash
-npm run bench:latency                                   # default: 10,000 chunks, 1,000 queries
-npm run bench:latency -- --chunks 5000 --queries 500
-npm run bench:latency -- --topk 5
-```
-
-**What it does not measure.** Cold-start (first query after process boot is excluded via a warmup call). Network latency for any optional rerank step. Concurrent query throughput — this is a single-thread sequential bench.
-
-## Hardware notes
-
-Numbers in the README's "Our scores at HEAD" table were collected on:
-- Apple M-series laptop, 32 GB RAM
-- Node.js 22.x
-- Local file backend (LanceDB on disk)
-- No `OPENROUTER_API_KEY` set during the runs
-
-On comparable Linux hardware (modern x86 laptop, NVMe SSD) expect throughput within ±20% and latencies within ±30%. The 23 MB embedding model loads via ONNX runtime on CPU — there's no GPU dependency.
-
-## Known caveats
-
-- **LoCoMo's `temporal-inference` category** is the hardest segment for the zero-API pipeline. The retriever has to compose dates that never appear verbatim in the source sessions. Reranking helps; we don't claim a fix here.
-- **LongMemEval's dataset URL** is the `xiaowu0162/longmemeval-cleaned` mirror. The original `xiaowu0162/LongMemEval` repo restructured at one point — the cleaned mirror is the stable reference.
-- **Ingest throughput excludes KG extraction.** That's a deliberate measurement choice (keeps the bench API-key-free) and is called out in the JSON `notes` field. Production deployments with KG extraction on should expect 30–50% lower throughput.
-- **Query latency is single-threaded.** Real workloads run multiple agents concurrently; their effective per-query latency can be higher under contention. A multi-client throughput bench is open work.
-- **Comparison numbers in the README** mix R@10 retrieval recall with LLM-as-judge accuracy depending on what each upstream system published. The closest apples-to-apples row is MemPalace v5 (same dataset, same metric, same retrieval-only methodology).
-
-## Reproducing a published number
-
-1. Note the `commit` field from the result JSON.
-2. `git checkout <commit>`.
-3. `npm install`.
-4. `bash benchmarks/download-datasets.sh`.
-5. `npm run bench:<name>`.
-
-The `config` block in the JSON captures the embedding model, top-K, rerank flag, and any other parameters that affect the score. Match those flags exactly to reproduce.
+This project used to publish LoCoMo numbers. It no longer does: about 6% of its gold answers
+are wrong, its conversations fit in a model's context window (so a full-context baseline beats
+memory systems), and abstention is left unscored.
