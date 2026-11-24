@@ -23,6 +23,7 @@
 process.env.STORAGE_BACKEND = 'file';
 
 import Anthropic from '@anthropic-ai/sdk';
+import OpenAI from 'openai';
 import { embed, getEmbeddingModelName } from '../src/llm.js';
 import { loadConfig } from '../src/config.js';
 import { claudeCliComplete } from '../src/claude-cli.js';
@@ -38,11 +39,20 @@ const graderModel = arg('grader-model') ?? 'claude-opus-5-5';
 const answerEffort = (arg('answer-effort') ?? 'medium') as 'low' | 'medium' | 'high';
 const graderEffort = (arg('grader-effort') ?? 'low') as 'low' | 'medium' | 'high';
 const limit = arg('limit') ? Number(arg('limit')) : undefined;
+const perType = arg('per-type') ? Number(arg('per-type')) : undefined;
 const runs = Number(arg('runs') ?? 1);
 const concurrency = Number(arg('concurrency') ?? 4);
 const dryRun = process.argv.includes('--dry-run');
 /** `api`: the Anthropic API (ANTHROPIC_API_KEY). `claude-cli`: the Claude Code CLI signed in here, on its subscription. */
+type Provider = 'api' | 'claude-cli' | 'openrouter';
 const provider = (arg('provider') ?? 'api') as 'api' | 'claude-cli';
+/**
+ * Who grades. `openrouter` calls any model on OpenRouter (OPENROUTER_API_KEY), for the official
+ * LongMemEval judge: --grader-provider openrouter --grader-model openai/gpt-4o-2024-08-06.
+ */
+const graderProvider = (arg('grader-provider') ?? provider) as Provider;
+/** A second judge for the same answers, as provider:model, to see how far two graders agree. */
+const extraGrader = arg('extra-grader')?.match(/^(api|claude-cli|openrouter):(.+)$/);
 /** Leave room for the prompt and the answer inside a 1M-token window. */
 const FULL_CONTEXT_MAX_TOKENS = 900_000;
 
@@ -90,10 +100,18 @@ async function buildTasks(): Promise<Task[]> {
   const tasks: Task[] = [];
   if (benchmark === 'lme-s') {
     // Abstention questions are included here: answering "I don't know" is the right answer.
-    const { readFileSync } = await import('node:fs');
-    const { lmePath } = await import('./lib/datasets.js');
-    const all = JSON.parse(readFileSync(lmePath('s'), 'utf-8')) as Array<import('./lib/datasets.js').LmeEntry>;
-    for (const e of all.slice(0, limit)) {
+    // Streamed: parsing the 277 MB file in one piece holds over a gigabyte for the whole run.
+    // The file is ordered by question type, so a sample takes --per-type N of each (abstention
+    // counted as its own type) rather than the first N questions.
+    const { lmePath, streamJsonArray } = await import('./lib/datasets.js');
+    const seen = new Map<string, number>();
+    for await (const e of streamJsonArray<import('./lib/datasets.js').LmeEntry>(lmePath('s'))) {
+      if (perType) {
+        const group = e.question_id.endsWith('_abs') ? 'abstention' : e.question_type;
+        const n = seen.get(group) ?? 0;
+        if (n >= perType) continue;
+        seen.set(group, n + 1);
+      }
       const items = e.haystack_sessions.map((s, i) => ({
         source: e.haystack_session_ids[i], text: s.map(m => `${m.role}: ${m.content}`).join('\n'), createdAt: e.haystack_dates[i],
       }));
@@ -152,7 +170,9 @@ async function retrieve(tasks: Task[]): Promise<void> {
 
 // ── API calls ────────────────────────────────────────────────────────
 
-const client = dryRun || provider === 'claude-cli' ? null : new Anthropic();
+const usesApi = provider === 'api' || graderProvider === 'api' || extraGrader?.[1] === 'api';
+const usesOpenRouter = graderProvider === 'openrouter' || extraGrader?.[1] === 'openrouter';
+const client = dryRun || !usesApi ? null : new Anthropic();
 
 function text(msg: Anthropic.Message): string {
   return msg.content.flatMap(b => (b.type === 'text' ? [b.text] : [])).join('').trim();
@@ -190,17 +210,30 @@ async function answer(t: Task): Promise<{ response: string; inputTokens: number;
   };
 }
 
-async function grade(t: Task, response: string): Promise<boolean> {
-  if (provider === 'claude-cli') {
-    return /^\W*yes\b/i.test(await claudeCliComplete('You grade answers. Reply yes or no only.', t.grade(response), graderModel));
+/**
+ * The official LongMemEval judge settings: temperature 0, ten tokens for a yes or a no.
+ * Through the openai client, as src/llm.ts does: the global fetch leaves this process's event
+ * loop empty mid-request, and node exits with the await unsettled.
+ */
+let openRouter: OpenAI | null = null;
+async function openRouterComplete(model: string, prompt: string): Promise<string> {
+  openRouter ??= new OpenAI({ baseURL: 'https://openrouter.ai/api/v1', apiKey: process.env.OPENROUTER_API_KEY });
+  const res = await openRouter.chat.completions.create({ model, messages: [{ role: 'user', content: prompt }], temperature: 0, max_tokens: 10 });
+  return res.choices[0]?.message?.content ?? '';
+}
+
+async function judge(by: Provider, model: string, prompt: string): Promise<boolean> {
+  let reply: string;
+  if (by === 'claude-cli') {
+    reply = await claudeCliComplete('You grade answers. Reply yes or no only.', prompt, model);
+  } else if (by === 'openrouter') {
+    reply = await openRouterComplete(model, prompt);
+  } else {
+    reply = text(await client!.messages.create({
+      model, max_tokens: 16000, output_config: { effort: graderEffort }, messages: [{ role: 'user', content: prompt }],
+    }));
   }
-  const msg = await client!.messages.create({
-    model: graderModel,
-    max_tokens: 16000,
-    output_config: { effort: graderEffort },
-    messages: [{ role: 'user', content: t.grade(response) }],
-  });
-  return /^\W*yes\b/i.test(text(msg));
+  return /^\W*yes\b/i.test(reply);
 }
 
 async function pool<T>(items: T[], n: number, fn: (item: T) => Promise<void>): Promise<void> {
@@ -229,20 +262,28 @@ if (dryRun) {
   console.log(`\nGrader prompt for the first question, with a placeholder response:\n\n${t.grade('<model response>')}`);
   process.exit(0);
 }
-if (provider === 'api' && !process.env.ANTHROPIC_API_KEY) {
+if (usesOpenRouter && !process.env.OPENROUTER_API_KEY) {
+  console.error('OPENROUTER_API_KEY is not set; the openrouter grader needs it.');
+  process.exit(1);
+}
+if (usesApi && !process.env.ANTHROPIC_API_KEY) {
   console.error('ANTHROPIC_API_KEY is not set. Set the key, pass --provider claude-cli to use the signed-in Claude Code CLI, or use --dry-run.');
   process.exit(1);
 }
 
-interface Graded { id: string; type: string; correct: boolean; refused: boolean; inputTokens: number; ms: number }
+interface Graded { id: string; type: string; correct: boolean; extraCorrect?: boolean; refused: boolean; inputTokens: number; ms: number }
 const runResults: Graded[][] = [];
 for (let r = 1; r <= runs; r++) {
   const graded: Graded[] = [];
   await pool(tasks, concurrency, async t => {
     try {
       const a = await answer(t);
-      const correct = !a.refused && await grade(t, a.response);
-      graded.push({ id: t.id, type: t.type, correct, refused: a.refused, inputTokens: a.inputTokens, ms: a.ms });
+      const prompt = t.grade(a.response);
+      const correct = !a.refused && await judge(graderProvider, graderModel, prompt);
+      const extraCorrect = extraGrader ? !a.refused && await judge(extraGrader[1] as Provider, extraGrader[2], prompt) : undefined;
+      graded.push({ id: t.id, type: t.type, correct, extraCorrect, refused: a.refused, inputTokens: a.inputTokens, ms: a.ms });
+      // One line per question, so a run that is cut short still leaves its outcomes in the log.
+      console.error(`  ${correct ? 'correct' : 'wrong  '}${extraGrader ? (extraCorrect ? ' (2nd: correct)' : ' (2nd: wrong)  ') : ''} ${t.type} ${t.id}`);
     } catch (err) {
       console.error(`  [failed] ${t.id}: ${err instanceof Error ? err.message : err}`);
     }
@@ -263,12 +304,16 @@ for (const g of runResults[0]) {
 for (const c of Object.values(perCategory)) c.accuracy = (c.correct as number) / (c.n as number);
 const all = runResults.flat();
 
-console.log(`\n${benchmark} · ${mode}: accuracy ${(m * 100).toFixed(1)}% ±${(sd * 100).toFixed(1)} over ${runs} run(s), ${runResults[0].length} questions`);
+console.log(`\n${benchmark} · ${mode}: accuracy ${(m * 100).toFixed(1)}% ±${(sd * 100).toFixed(1)} over ${runs} run(s), ${runResults[0].length} questions (graded by ${graderModel})`);
+if (extraGrader) {
+  const agree = all.filter(g => g.extraCorrect === g.correct).length;
+  console.log(`second grader ${extraGrader[2]}: accuracy ${(100 * all.filter(g => g.extraCorrect).length / Math.max(1, all.length)).toFixed(1)}%, agrees with the first on ${agree} of ${all.length}`);
+}
 const path = writeBenchmarkResult({
   benchmark: `qa-${benchmark}${benchmark === 'beam' ? `-${arg('size') ?? '100K'}` : ''}-${mode}`,
   durationMs: Math.round(performance.now() - started),
   config: {
-    mode, provider, answerModel, graderModel, answerEffort, graderEffort, runs, questionLimit: limit ?? null,
+    mode, provider, answerModel, graderProvider, graderModel, extraGrader: extraGrader ? extraGrader[0] : null, answerEffort, graderEffort, runs, questionLimit: limit ?? null, perType: perType ?? null,
     retrieval: mode === 'memory' ? { topK: 10, embeddingModel: getEmbeddingModelName() } : null,
     prompts: { answerSystem: ANSWER_SYSTEM, grader: Object.fromEntries(Object.entries(GRADER).map(([k, f]) => [k, f.toString()])) },
     hardware: hardware(),
@@ -276,11 +321,15 @@ const path = writeBenchmarkResult({
   results: {
     accuracy: { mean: m, std: sd }, runs: accs,
     refusals: all.filter(g => g.refused).length,
+    ...(extraGrader ? {
+      extraGraderAccuracy: all.filter(g => g.extraCorrect).length / Math.max(1, all.length),
+      gradersAgree: all.filter(g => g.extraCorrect === g.correct).length / Math.max(1, all.length),
+    } : {}),
     answerInputTokensPerQuestion: Math.round(all.reduce((s, g) => s + g.inputTokens, 0) / Math.max(1, all.length)),
     answerLatencyMs: percentiles(all.map(g => g.ms)),
   },
   perCategory,
-  notes: `Graded by ${graderModel}, not the official gpt-4o graders, so not directly comparable with published numbers. ` +
+  notes: `Graded by ${graderModel}${/gpt-4o/.test(graderModel) ? ', the judge the official LongMemEval script uses' : ', not the official gpt-4o graders, so not directly comparable with published numbers'}. ` +
     'Refusals count as incorrect. No server-side model fallback, so every answer and grade comes from the named models.',
 });
 console.log(`Results JSON: ${path}`);
