@@ -11,6 +11,12 @@ Lessons from a production deployment of a memory system that started from this r
 The plan, with what was left out and why, is `docs/plans/production-memory-lessons.md`.
 
 ### Added
+- **Answer accuracy, graded by the benchmark's own judge.** `bench:qa` can grade with gpt-4o
+  through OpenRouter (`--grader-provider openrouter`), have a second judge grade the same
+  answers (`--extra-grader`), and take an even sample across question types (`--per-type`).
+  The first run covers 70 LongMemEval S questions with Claude Sonnet answering: 97.1% with
+  gpt-4o as judge and 92.9% with Claude Sonnet as judge. The README and `BENCHMARKS.md` set
+  that beside what other memory systems publish, and say why it isn't like for like yet.
 - **Use a Claude subscription for LLM features.** `NOMAD_MEMORY_LLM_PROVIDER=claude-cli` sends extraction, re-ranking and consolidation through the Claude Code CLI signed in on this machine (`claude -p`, model `haiku` by default), so no API key is needed. The child runs with no tools, no MCP servers and `--safe-mode`, and the hooks skip themselves when `NOMAD_MEMORY_CHILD=1`, so it can't call back into nomad-memory.
 
 - **Secrets are redacted before storing.** `memory-ingest` replaces credential shapes
@@ -45,7 +51,7 @@ The plan, with what was left out and why, is `docs/plans/production-memory-lesso
   deviation in every result file. LongMemEval abstention questions are excluded from retrieval
   scoring, as in the official evaluation. `npm run bench:qa` grades QA accuracy with a
   configurable Claude model (default `claude-opus-5-5`, key from `ANTHROPIC_API_KEY`) against
-  a no-memory full-context baseline; it has not been run yet. Results and methodology are in
+  a no-memory full-context baseline. Results and methodology are in
   the README and `BENCHMARKS.md`. The headline LongMemEval number changes meaning: the old
   96.8% / 98.8% was recall_any with abstention questions included; this branch measures 95.1% /
   99.2% recall_any and 84.0% / 93.6% recall_all on S at session level.

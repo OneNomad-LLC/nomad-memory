@@ -50,12 +50,27 @@ The older `PRZM_MEMORY_*` names are deprecated but still read. Every other setti
 
 ## Benchmarks
 
-Retrieval only, no model in the loop. On LongMemEval S the right sessions land in the top 10 for 93.6% of questions (recall_all@10). The harder sets are a different story: 79.2% on a sample of LongMemEval M, and under 20% on BEAM's long multi-domain chats. Methods, subsets and caveats are in [BENCHMARKS.md](BENCHMARKS.md).
+Retrieval is measured with no model in the loop. On LongMemEval S, every session a question needs is in the top 10 for 94.9% of questions, and at least one is in the top 5 for 96.8% (MemPalace reports 96.6% on that measure). Longer histories are harder: 79.2% on a sample of LongMemEval M, measured before BM25 keyword search went in, and 22.9% on BEAM's 100K-token chats.
+
+For answer accuracy we ran 70 LongMemEval S questions, ten of each type. Claude Sonnet read the top 10 sessions Nomad Memory retrieved, and gpt-4o, the judge the benchmark specifies, marked 68 of the answers correct. A stricter Claude judge passed 65 of the same answers.
+
+Other systems publish their own scores for the full 500 questions:
+
+| System | LongMemEval S | Model answering |
+|---|---|---|
+| Nomad Memory (70-question sample) | 97.1% | Claude Sonnet |
+| Mastra | 94.9% | gpt-5-mini |
+| Mem0 | 94.4% | not named |
+| Hindsight | 91.4% | Gemini 3 Pro |
+| Supermemory | 85.2% | Gemini 3 Pro |
+| Zep | 71.2% | gpt-4o |
+
+This isn't like for like yet. Ours is a sample, and Sonnet read about 30,000 tokens a question where Mem0 reports under 7,000. The model answering also matters as much as the memory: Mastra scores 84.2% with gpt-4o and 94.9% with gpt-5-mini. Sources, methods and what we haven't run are in [BENCHMARKS.md](BENCHMARKS.md#how-this-compares).
 
 ## Privacy
 
-Everything stays on your machine unless you point it at an LLM endpoint or the Claude CLI. Secrets (API keys, tokens, private keys, passwords) are redacted before anything is stored, on by default. No telemetry.
+Everything stays on your machine unless you point it at an LLM endpoint or the Claude CLI, and there's no telemetry. Secrets (API keys, tokens, private keys, passwords) are redacted before anything is stored; set `NOMAD_MEMORY_REDACT_SECRETS=0` to keep them.
 
 ## License
 
-Apache-2.0. See [LICENSE](LICENSE). Copyright 2026 OneNomad LLC.
+Apache-2.0; see [LICENSE](LICENSE). Copyright 2026 OneNomad LLC.
