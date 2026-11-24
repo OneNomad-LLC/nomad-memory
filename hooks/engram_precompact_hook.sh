@@ -18,6 +18,9 @@
 # (that's where the LLM-distilled facts come from). The hook's job is
 # strictly the compact-time lifeline, not session-long memory hygiene.
 
+# A Claude CLI run that nomad-memory itself started for a completion: do nothing.
+[ "${NOMAD_MEMORY_CHILD:-}" = "1" ] && exit 0
+
 DATA_DIR="${NOMAD_MEMORY_DATA_DIR:-${NOMAD_MEMORY_DATA_DIR:-${ENGRAM_DATA_DIR:-${SMART_MEMORY_DATA_DIR:-}}}}"
 if [ -z "$DATA_DIR" ]; then  # default; keep a pre-rename przm-memory store if it is the only one
   DATA_DIR="$HOME/.claude/nomad-memory"

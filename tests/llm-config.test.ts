@@ -14,10 +14,22 @@ const LLM_VARS = [
   'NOMAD_MEMORY_LLM_BASE_URL', 'ENGRAM_LLM_BASE_URL',
   'NOMAD_MEMORY_LLM_API_KEY', 'OPENROUTER_API_KEY',
   'NOMAD_MEMORY_LLM_MODEL', 'ENGRAM_MODEL', 'SMART_MEMORY_MODEL',
+  'NOMAD_MEMORY_LLM_PROVIDER',
 ];
 
 describe('LLM settings', () => {
   beforeEach(() => { for (const v of LLM_VARS) delete process.env[v]; });
+
+  it('the Claude CLI provider needs no key, and defaults to haiku', () => {
+    process.env.NOMAD_MEMORY_LLM_PROVIDER = 'claude-cli';
+    assert.equal(isLlmAvailable(), true);
+    assert.equal(getLlmModelName(), 'haiku');
+    // An OpenRouter-style model name doesn't apply to the CLI; a CLI name does.
+    process.env.NOMAD_MEMORY_LLM_MODEL = 'anthropic/claude-haiku-4.5';
+    assert.equal(getLlmModelName(), 'haiku');
+    process.env.NOMAD_MEMORY_LLM_MODEL = 'sonnet';
+    assert.equal(getLlmModelName(), 'sonnet');
+  });
 
   it('nothing set: no LLM', () => {
     assert.equal(isLlmAvailable(), false);
