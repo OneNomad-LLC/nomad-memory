@@ -1,39 +1,53 @@
-import type { SmartMemoryConfig } from './types.js';
-
 /**
  * Cross-encoder reranking using @huggingface/transformers.
  *
- * Uses a small cross-encoder model (~50MB, ONNX, CPU) to score
- * (query, document) pairs. Much more accurate than bi-encoder
- * similarity alone. Benchmarks show Hit@1 improvement from ~63% to ~83%.
+ * A small cross-encoder (ONNX, CPU) reads the query and one document together and scores how
+ * well the document answers the query, which a bi-encoder's vector similarity can only
+ * approximate.
  *
  * Default model: Xenova/ms-marco-MiniLM-L-6-v2
- * Override: ENGRAM_RERANK_MODEL env var
+ * Override: NOMAD_MEMORY_RERANK_MODEL (ENGRAM_RERANK_MODEL still read)
  *
- * Lazy-loaded on first call (same pattern as embedding model).
+ * Lazy-loaded on first call (same pattern as the embedding model).
  */
+
+import { memEnv } from './env.js';
 
 export interface RerankResult {
   index: number;
   score: number;
 }
 
-let _reranker: any = null;
-let _rerankerLoading: Promise<any> | null = null;
+interface CrossEncoder {
+  tokenizer: (queries: string[], opts: Record<string, unknown>) => unknown;
+  model: (inputs: unknown) => Promise<{ logits: { data: Float32Array } }>;
+}
 
-async function getReranker(): Promise<any> {
+/** Pairs scored per forward pass; padding to the longest pair makes bigger batches slower, not faster. */
+const BATCH = 16;
+/** The model reads 512 tokens of query plus document; anything longer is cut off. */
+const MAX_TOKENS = 512;
+
+let _reranker: CrossEncoder | null = null;
+let _rerankerLoading: Promise<CrossEncoder> | null = null;
+
+async function getReranker(): Promise<CrossEncoder> {
   if (_reranker) return _reranker;
 
   if (!_rerankerLoading) {
     _rerankerLoading = (async () => {
-      const { pipeline } = await import('@huggingface/transformers');
-      const modelName = process.env.ENGRAM_RERANK_MODEL ?? process.env.SMART_MEMORY_RERANK_MODEL ?? 'Xenova/ms-marco-MiniLM-L-6-v2';
+      const { AutoTokenizer, AutoModelForSequenceClassification } = await import('@huggingface/transformers');
+      const modelName = memEnv('RERANK_MODEL', ['ENGRAM_RERANK_MODEL', 'SMART_MEMORY_RERANK_MODEL']) ?? 'Xenova/ms-marco-MiniLM-L-6-v2';
       const device = process.env.ENGRAM_DEVICE ?? process.env.SMART_MEMORY_DEVICE ?? 'cpu';
       console.error(`nomad-memory: loading reranker model ${modelName} (device: ${device})...`);
-      _reranker = await pipeline('text-classification', modelName, { device } as any);
+      const tokenizer = await AutoTokenizer.from_pretrained(modelName);
+      const model = await AutoModelForSequenceClassification.from_pretrained(modelName, { device } as never);
       console.error('nomad-memory: reranker model ready');
+      _reranker = { tokenizer, model } as unknown as CrossEncoder;
       return _reranker;
     })();
+    // A failed load (no network on first use) must not poison every later call.
+    _rerankerLoading.catch(() => { _rerankerLoading = null; });
   }
 
   return _rerankerLoading;
@@ -41,32 +55,25 @@ async function getReranker(): Promise<any> {
 
 /**
  * Rerank documents against a query using a cross-encoder.
- * Returns sorted results with scores, highest first.
+ * Returns sorted results with scores (the model's relevance logit), highest first.
  */
 export async function rerank(
   query: string,
   documents: string[],
   topK: number = 10
 ): Promise<RerankResult[]> {
-  const reranker = await getReranker();
+  const { tokenizer, model } = await getReranker();
 
   const results: RerankResult[] = [];
-
-  // Score each (query, document) pair
-  for (let i = 0; i < documents.length; i++) {
-    try {
-      // Cross-encoders take a pair and output a relevance score
-      const output = await reranker(`${query} [SEP] ${documents[i].slice(0, 512)}`);
-      const score = Array.isArray(output)
-        ? (output[0]?.score ?? 0)
-        : (output?.score ?? 0);
-      results.push({ index: i, score });
-    } catch {
-      results.push({ index: i, score: 0 });
-    }
+  for (let start = 0; start < documents.length; start += BATCH) {
+    const batch = documents.slice(start, start + BATCH);
+    const inputs = tokenizer(batch.map(() => query), {
+      text_pair: batch, padding: true, truncation: true, max_length: MAX_TOKENS,
+    });
+    const { logits } = await model(inputs);
+    batch.forEach((_, i) => results.push({ index: start + i, score: logits.data[i] }));
   }
 
-  // Sort by score descending, take top K
   results.sort((a, b) => b.score - a.score);
   return results.slice(0, topK);
 }

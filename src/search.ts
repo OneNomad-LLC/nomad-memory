@@ -4,6 +4,7 @@ import { Storage } from './storage.js';
 import { embed, llmComplete, getEmbeddingModelProfile } from './llm.js';
 import { cosineSimilarity, estimateTokens } from './utils.js';
 import { rerank } from './reranker.js';
+import { bm25Scores } from './bm25.js';
 import {
   createTrace,
   recordStage,
@@ -14,7 +15,7 @@ import {
 
 /**
  * Hybrid memory search: native ANN vector search (LanceDB) + keyword
- * with IDF weighting + temporal/entity/phrase boosting + spreading activation.
+ * (BM25) + temporal/entity/phrase boosting + spreading activation.
  */
 export async function search(
   config: SmartMemoryConfig,
@@ -74,9 +75,6 @@ export async function search(
   // Pre-extract query signals for boosting
   const querySignals = extractQuerySignals(query, referenceDate);
   const hasEntities = querySignals.entities.length > 0;
-
-  // Build IDF weights for keyword scoring
-  const idfWeights = buildIdfWeights(query, allChunks);
 
   // ── Native ANN vector search via LanceDB ───────────────────────────
   let queryEmbedding: number[] | null = null;
@@ -171,29 +169,12 @@ export async function search(
     }
   }
 
-  // ── IDF-weighted keyword scoring ──────────────────────────────────
-  // Rare terms (names, specific nouns) score much higher than common words.
+  // ── BM25 keyword scoring ───────────────────────────────────────────
+  const byId = new Map(allChunks.map(c => [c.id, c]));
   const keywordScored = new Map<string, { chunk: StoredChunk; score: number }>();
-  const queryTerms = Object.keys(idfWeights);
-  if (queryTerms.length > 0) {
-    const totalIdfWeight = Object.values(idfWeights).reduce((a, b) => a + b, 0);
-
-    for (const chunk of allChunks) {
-      const text = `${chunk.content} ${chunk.tags.join(' ')}`.toLowerCase();
-      let weightedMatches = 0;
-
-      for (const term of queryTerms) {
-        const escaped = term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-        if (new RegExp(`\\b${escaped}\\b`).test(text)) {
-          weightedMatches += idfWeights[term];
-        }
-      }
-
-      if (weightedMatches > 0) {
-        const keywordScore = weightedMatches / totalIdfWeight;
-        keywordScored.set(chunk.id, { chunk, score: keywordScore });
-      }
-    }
+  const keywordDocs = allChunks.map(c => ({ id: c.id, text: `${c.content} ${c.tags.join(' ')}` }));
+  for (const [id, score] of bm25Scores(query, keywordDocs)) {
+    keywordScored.set(id, { chunk: byId.get(id)!, score });
   }
   if (trace) recordStage(trace, { keywordMatches: keywordScored.size });
 
@@ -322,6 +303,7 @@ export async function search(
 
     for (const chunk of allChunks) {
       if (scored.has(chunk.id)) continue; // Already in candidates
+      if (chunk.consolidationLevel === -1) continue; // Parent containers are never results
       const chunkTime = chunk.temporalAnchor ?? new Date(chunk.createdAt).getTime();
 
       for (const win of windows) {
@@ -438,34 +420,19 @@ export async function search(
   }
 
   // ── Cross-encoder reranking (Improvement 7) ────────────────────────
-  let sorted: Array<{ chunk: StoredChunk; score: number }>;
+  let sorted = Array.from(scored.values()).sort((a, b) => b.score - a.score);
 
   if (config.enableCrossEncoderRerank) {
-    const candidates = Array.from(scored.values())
-      .sort((a, b) => b.score - a.score)
-      .slice(0, Math.max(30, limit));
-
+    // 30 is deep enough: reranking 60 scored no better on BEAM and took 60% longer.
+    const depth = Math.max(30, limit);
+    const head = sorted.slice(0, depth);
     try {
-      const reranked = await rerank(
-        query,
-        candidates.map(c => c.chunk.content),
-        limit
-      );
-
-      sorted = reranked.map(r => ({
-        chunk: candidates[r.index].chunk,
-        score: r.score,
-      }));
+      // The reranker reorders the head; everything below it keeps its fused order.
+      const reranked = await rerank(query, head.map(c => c.chunk.content), head.length);
+      sorted = [...reranked.map(r => ({ chunk: head[r.index].chunk, score: r.score })), ...sorted.slice(depth)];
     } catch {
-      // Fall back to score-based ranking
-      sorted = Array.from(scored.values())
-        .sort((a, b) => b.score - a.score)
-        .slice(0, limit);
+      // Keep the fused order
     }
-  } else {
-    sorted = Array.from(scored.values())
-      .sort((a, b) => b.score - a.score)
-      .slice(0, limit);
   }
 
   // ── Apply token budget ────────────────────────────────────────────
@@ -473,8 +440,16 @@ export async function search(
   const results: SearchResult[] = [];
   let tokensUsed = 0;
   const toBump: StoredChunk[] = [];
+  // A long memory is stored as pieces. Only its best-ranked piece is returned, so the pieces
+  // of one memory can't fill the results and crowd other memories out.
+  const parentsSeen = new Set<string>();
 
   for (const entry of sorted) {
+    const parentId = entry.chunk.parentChunkId;
+    if (parentId) {
+      if (parentsSeen.has(parentId)) continue;
+      parentsSeen.add(parentId);
+    }
     const tokens = estimateTokens(entry.chunk.content) + 10;
     if (tokensUsed + tokens > config.maxRecallTokens) break;
     if (results.length >= limit) break;
@@ -518,64 +493,6 @@ export async function search(
   }
 
   return results;
-}
-
-// ─────────────────────────────────────────────────────────────────────
-// IDF-WEIGHTED KEYWORD SCORING
-// ─────────────────────────────────────────────────────────────────────
-
-/**
- * Build IDF-like weights for query terms.
- * Terms that appear in fewer documents get higher weight.
- * Proper nouns (capitalized) get an additional boost.
- */
-function buildIdfWeights(
-  query: string,
-  corpus: StoredChunk[]
-): Record<string, number> {
-  const STOP = new Set([
-    'the', 'a', 'an', 'is', 'are', 'was', 'were', 'be', 'been', 'being',
-    'have', 'has', 'had', 'do', 'does', 'did', 'will', 'would', 'could',
-    'should', 'may', 'might', 'can', 'what', 'when', 'where', 'which',
-    'who', 'whom', 'how', 'why', 'that', 'this', 'these', 'those',
-    'i', 'you', 'he', 'she', 'it', 'we', 'they', 'my', 'your', 'his',
-    'her', 'its', 'our', 'their', 'if', 'for', 'from', 'with', 'about',
-    'into', 'and', 'but', 'or', 'not', 'no', 'so', 'too', 'very', 'just',
-    'also', 'than', 'both', 'any', 'all',
-  ]);
-
-  const rawTerms = query.split(/\s+/).map(t => t.replace(/[^a-zA-Z0-9'-]/g, '')).filter(t => t.length > 1);
-  const terms = rawTerms.filter(t => !STOP.has(t.toLowerCase()));
-  if (terms.length === 0) return {};
-
-  const N = Math.max(corpus.length, 1);
-  const weights: Record<string, number> = {};
-
-  for (const term of terms) {
-    const lower = term.toLowerCase();
-    if (weights[lower]) continue; // dedupe
-
-    // Count documents containing this term
-    const escaped = lower.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-    const regex = new RegExp(`\\b${escaped}\\b`);
-    let df = 0;
-    for (const chunk of corpus) {
-      if (regex.test(chunk.content.toLowerCase())) df++;
-    }
-
-    // IDF: log(N / (df + 1)) -- rare terms get higher weight
-    let idf = Math.log(N / (df + 1));
-
-    // Boost proper nouns (capitalized in original query)
-    if (/^[A-Z]/.test(term) && term.length > 2) {
-      idf *= 1.5;
-    }
-
-    // Floor: even common terms get some weight
-    weights[lower] = Math.max(0.1, idf);
-  }
-
-  return weights;
 }
 
 // ─────────────────────────────────────────────────────────────────────

@@ -232,6 +232,12 @@ refuses with instructions rather than corrupting the column.
 
 ## DEBT-009 — No reranker (intentional, but track the trade-off)
 
+**Update (2026-11-24):** the cross-encoder in `src/reranker.ts` was not a working stub: it
+scored every document 1.0. Fixed and measured (R-010). On BEAM 100K stored as pieces it adds
+about 3 points of recall_all@10 for about 150 ms a search; over whole LongMemEval sessions it
+loses 2.8 points, because it reads only the first 512 tokens. It stays opt-in. Making it the
+default needs a LongMemEval run through chunked ingest, which has not been done.
+
 **Update (2026-09-01):** the `memory-search` handler was found calling
 the LLM listwise reranker (`selectRelevant`) whenever an API key was
 configured — exactly the path this entry warns against, and one the
@@ -424,6 +430,11 @@ after any write still loads every non-archive row, and IDF weights are still
 recomputed per query over the full corpus. The real fix remains R-012: a
 persisted BM25 index updated incrementally at ingest, which also makes the
 "hybrid BM25" naming honest.
+
+**Update (2026-11-24):** the scoring is real BM25 now (`src/bm25.ts`), so the naming is
+honest. The index is still not persisted: every query tokenizes the whole corpus, about 50 ms
+for 4.5 MB of text. Revisit when a store passes roughly 10 MB of text or search p50 passes
+200 ms.
 
 ---
 

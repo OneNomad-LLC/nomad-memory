@@ -52,6 +52,19 @@ The plan, with what was left out and why, is `docs/plans/production-memory-lesso
 
 ### Changed
 
+- **Keyword search is BM25.** The keyword stage only checked whether each query term appeared
+  in a memory, so its ranking was mostly ties. It now scores with BM25 (term frequency, length
+  normalisation, rarity) over Porter-stemmed words, which is what "hybrid" was always meant to
+  mean. Measured on the retrieval benchmarks, same embeddings: LongMemEval S recall_all@5
+  84.0% to 86.4% and recall_all@10 93.6% to 94.9%; BEAM 100K recall_all@10 19.6% to 22.9% and
+  recall_any@10 48.3% to 53.3%. Search time is unchanged within a few milliseconds. Not yet
+  re-measured: LongMemEval M and MemoryAgentBench. Adds the 13 KB `stemmer` package.
+- **One result per memory.** A long memory is stored as pieces, and several pieces of one
+  memory could fill the results. Search now returns only the best-ranked piece of each. On
+  BEAM 100K stored the way `memory-ingest` stores it, recall_all@10 goes from 16.7% to 19.6%
+  and recall_any@10 from 42.1% to 49.2%. Parent containers no longer come back from
+  date-window queries either.
+
 - **Renamed to nomad-memory.** The package is `@onenomad/nomad-memory` and the bins are `nomad-memory`, `nomad-memory-mcp` and `nomad-memory-migrate`; the old `przm-memory*` bins stay as aliases. Settings are `NOMAD_MEMORY_*`; the `PRZM_MEMORY_*` names are deprecated but still read. The default data and model directories are now `~/.claude/nomad-memory` and `~/.cache/nomad-memory`, and an existing `przm-memory` one is still used when there is no new one.
 - **Extraction cites its sources.** `memory-extract` numbers the messages it sends the LLM and
   requires each memory to name the user messages it came from. A candidate citing nothing, a
@@ -72,6 +85,20 @@ The plan, with what was left out and why, is `docs/plans/production-memory-lesso
 
 ### Fixed
 
+- **The cross-encoder reranker works.** `NOMAD_MEMORY_ENABLE_CROSS_ENCODER_RERANK=1` has never
+  done anything: the model's one relevance logit went through a softmax, so every document
+  scored 1.0 and the order never changed. It now scores query and document as a pair, in
+  batches. It stays off by default. On BEAM 100K stored as pieces it adds about 3 points
+  (recall_all@10 19.6% to 22.5%, NDCG@10 0.233 to 0.269) for about 150 ms a search. It reads
+  512 tokens of each document, so it helps on pieces and hurts on long unsplit text: over
+  whole LongMemEval sessions recall_all@10 fell from 94.9% to 92.1%.
+  `NOMAD_MEMORY_RERANK_MODEL` picks the model.
+- **`npm install` works in a fresh clone.** The Anthropic SDK used by `bench:qa` conflicted
+  with the optional `mem0ai` package's peer range and stopped the install; an override
+  settles it.
+- **Benchmark runs exit when they finish.** A search-timeout timer kept every run alive for a
+  minute after its last query. `--ingest chunked`, `BENCH_EMBED_CACHE` and
+  `bench:qa -- --provider claude-cli` are new; see `BENCHMARKS.md`.
 - **Recall no longer rewrites user memories.** Reconsolidation rewrote a recalled memory's
   text with the LLM whatever its origin, so a correction the user wrote could come back in a
   model's words after a `helpful` outcome. Consolidation already refused to merge, rewrite or
