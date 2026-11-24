@@ -59,6 +59,19 @@ Common flags: `--runs N` repeats the whole run and reports mean and standard dev
 subset. Every run stores each corpus in a fresh local store (LanceDB, file backend forced) and
 calls the same `search()` the MCP server calls, top 10, no reranker, no API key.
 
+Two more switches, for all three runners:
+
+- `--ingest chunked` stores each item the way `memory-ingest` does: text over 500 characters
+  becomes a parent plus pieces of up to 600 characters, each piece with its own vector. The
+  default stores each item whole and embeds its first 2,000 characters, which is what the
+  published numbers use. Chunked is closer to the product and returns far less context.
+- `BENCH_EMBED_CACHE=<dir>` keeps embeddings on disk between runs. Embedding is most of a
+  run's time and doesn't change when only search code does, so comparing two versions takes
+  minutes. Write latency is not measured with the cache on; published runs leave it off.
+
+Run one benchmark at a time. Each loads the embedding model and a dataset, and two at once
+are no faster on one CPU.
+
 ## LongMemEval
 
 [Wu et al., ICLR 2025](https://arxiv.org/abs/2410.10813). 500 questions over a per-question
@@ -133,6 +146,11 @@ npm run bench:qa -- --benchmark lme-s --dry-run      # build the prompts, call n
   `--answer-effort` (default `medium`) and `--grader-effort` (default `low`). The key comes
   from `ANTHROPIC_API_KEY`. Refusals count as incorrect; no server-side fallback is used, so
   every answer and grade comes from the named models.
+- **On a Claude subscription:** `--provider claude-cli` sends both calls through the Claude
+  Code CLI signed in on this machine, so no key is needed. Name models the CLI's way
+  (`--answer-model haiku --grader-model sonnet`). The CLI takes no effort setting and reports
+  no refusal flag, input tokens are estimated, and every call counts against the
+  subscription's usage limits.
 - **Grading prompts** are adapted from LongMemEval's official per-type prompts (with its
   off-by-one rule for temporal questions, its knowledge-update and preference rules, and its
   abstention prompt; abstention questions are included in QA). BEAM is graded as a binary pass

@@ -59,34 +59,6 @@ so the consolidation loops can pipeline.
 
 
 
-### R-010 — Bench a cross-encoder reranker on top-30
-
-**Where:** `src/reranker.ts:46-72` (stub for
-`Xenova/ms-marco-MiniLM-L-6-v2`).
-
-**Why:** DEBT-009 (`ARCHITECTURE_DEBT.md`) concluded "no reranker"
-based on a test of `selectRelevant()` — a listwise LLM reranker
-calling Haiku with 200-character truncated docs. That's a different
-cost class from cross-encoder reranking (~50ms CPU per top-30 vs
-~2000ms LLM). NDCG@10 = 0.875 with R@10 = 0.988 on LongMemEval is
-exactly the "found but not first" failure shape that cross-encoders
-fix. Measure it on LongMemEval S and M (NDCG@10, recall_all@5) and
-BEAM. Total p50 latency goes from 44ms → ~100ms.
-
-**Approach:** Wire the stub to use `bge-reranker-v2-m3` or
-`mxbai-rerank-large-v1`. Rerank top-30 after candidate scoring. Bench
-against the held-out set. Reopen DEBT-009 with the cross-encoder
-result.
-
-**Effort:** M.
-
-**Revisit if:** the bench actually shows no lift (then DEBT-009's
-update should explicitly cite "cross-encoder reranking also tested,
-no improvement" with the test details).
-
----
-
-
 ### R-012 — Add a tuned-BM25 baseline + 3-dataset BEIR OOD benchmark
 
 **Where:** new files under `benchmarks/`.
@@ -219,10 +191,11 @@ or bundle into a "tidy week."
   (the unshipped half of R-008; the instructions trim landed
   2026-09-01).
 
-- Replace IDF-weighted bag-of-words with a real persisted BM25 index
-  (`src/search.ts`). The in-memory listChunks cache (DEBT-021,
-  2026-09-01) removes the per-query full scan but the honesty issue
-  and restart cost remain.
+- Persist the BM25 index (`src/bm25.ts`). Scoring is real BM25 since
+  2026-11-24, but every query still tokenizes the whole corpus
+  (DEBT-021).
+- Run LongMemEval through `--ingest chunked` with the reranker on, to
+  decide whether the cross-encoder should be on by default (DEBT-009).
 - Bounded `listChunks` and aggregate-query `getTaxonomy`
   (`src/storage-postgres.ts:243-249, 302-312`). Unbounded full table
   scans break at scale. Switch to native

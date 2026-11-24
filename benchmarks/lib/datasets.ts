@@ -89,10 +89,8 @@ export async function* loadLongMemEval(variant: LmeVariant, opts: { perType?: nu
   requireData(path, variant === 's' ? 'lme' : 'lme-m');
   const seen = new Map<string, number>();
   let taken = 0;
-  const source = variant === 's'
-    ? (JSON.parse(readFileSync(path, 'utf-8')) as LmeEntry[])
-    : streamJsonArray<LmeEntry>(path);
-  for await (const e of source) {
+  // Streamed for S too: parsing its 277 MB in one piece holds over a gigabyte for the whole run.
+  for await (const e of streamJsonArray<LmeEntry>(path)) {
     if (e.question_id.endsWith('_abs')) continue;
     if (opts.perType) {
       const n = seen.get(e.question_type) ?? 0;

@@ -97,7 +97,9 @@ This is where the interesting stuff happens. A query goes through nine stages be
 
 **Stage 2: Vector Search.** Standard ANN search against LanceDB using cosine distance on 384-dim embeddings. This handles the "find semantically similar stuff" part. Candidates must clear a similarity floor calibrated per model family (0.42 for the default bge-small, 0.25 for MiniLM-class models) — floors live in the model profile in `src/llm.ts` and the `tests/alien-query-floor.test.ts` calibration suite keeps them honest.
 
-**Stage 3: IDF Keyword Scoring.** Rare terms in the query get weighted higher than common words. If you search for "Matt TypeScript" both terms will dominate scoring because they appear in relatively few memories. Proper nouns get an extra 1.5x boost. Results from this stage get blended with vector scores. The blend shifts toward keywords when entities are present, since names and specific nouns are better matched by exact text than by embedding similarity.
+**Stage 3: BM25 Keyword Scoring.** Each memory gets a BM25 score against the query: rare terms count more than common ones, a term that appears several times counts more than once (with diminishing returns), and long memories are discounted. Words are stemmed, so "visited" matches "visit". Proper nouns get an extra 1.5x boost. The keyword ranking is fused with the vector ranking by reciprocal rank.
+
+A long memory is stored as pieces, and search returns only its best-matching piece, so one memory can't fill the results.
 
 **Stage 4: Bonus Factors.** Every candidate gets adjustments for recency, recall frequency, tier, importance, and cognitive layer. Procedural memories (rules about how you want things done) get a small boost because they tend to be more immediately useful.
 
@@ -409,6 +411,7 @@ Then point your MCP client at `dist/server.js`:
 | `MEM0_API_KEY` | (none) | Enables Mem0 cloud extraction as a second opinion |
 | `NOMAD_MEMORY_DATA_DIR` | `~/.claude/nomad-memory` | Where data gets stored (legacy `PRZM_MEMORY_DATA_DIR` and `ENGRAM_DATA_DIR` also honored; an existing `~/.claude/przm-memory` is kept when there is no new directory). |
 | `NOMAD_MEMORY_EMBEDDING_MODEL` | `Xenova/bge-small-en-v1.5` | HuggingFace model for embeddings (legacy `ENGRAM_EMBEDDING_MODEL` also honored). After changing it, run `nomad-memory-mcp reembed` — stored vectors stay in the old model's space until re-embedded, and the server warns at boot when they mismatch. |
+| `NOMAD_MEMORY_ENABLE_CROSS_ENCODER_RERANK` | `0` | Set `1` to rerank the top 30 results with a local cross-encoder (`NOMAD_MEMORY_RERANK_MODEL`, default `Xenova/ms-marco-MiniLM-L-6-v2`, downloaded on first use). About 3 points better ranking on short memories for about 150 ms a search. |
 | `NOMAD_MEMORY_AUTO_MAINTAIN` | `1` | Set `0` to disable the automatic consolidation pass (runs ~20s after boot when the last run is older than the interval). One pass runs at a time across every session sharing the data directory (`maintenance.lock`). |
 | `NOMAD_MEMORY_MAINTAIN_INTERVAL_HOURS` | `24` | Minimum hours between automatic consolidation passes. |
 | `NOMAD_MEMORY_REDACT_SECRETS` | `1` | Set `0` to store text without redacting credentials (see [Secrets](#secrets)). |
