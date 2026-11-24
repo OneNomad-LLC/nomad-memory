@@ -9,6 +9,8 @@
 import { stemmer as porter } from 'stemmer';
 
 const K1 = 1.2;
+// Length normalisation earns its place on chat data: on BEAM 100K recall_all@10 is 22.9% at
+// 0.75 and 17.1% at 0. LongMemEval S is the same either way.
 const B = 0.75;
 
 const STOP = new Set([

@@ -91,6 +91,13 @@ The plan, with what was left out and why, is `docs/plans/production-memory-lesso
 
 ### Fixed
 
+- **A filtered search stays inside its filter.** `memory-search` with a `domain`, `topic` or
+  `tag` could return memories outside it: the graph walk followed links to other memories
+  without checking the filter, and links cross domains. Linked memories now pass the same
+  filter as every other result, and a parent container can't come back through a link.
+- **One oversized result no longer ends the list.** When a result didn't fit
+  `maxRecallTokens`, search stopped there and dropped the smaller results after it. It now
+  skips the one that doesn't fit.
 - **The cross-encoder reranker works.** `NOMAD_MEMORY_ENABLE_CROSS_ENCODER_RERANK=1` has never
   done anything: the model's one relevance logit went through a softmax, so every document
   scored 1.0 and the order never changed. It now scores query and document as a pair, in
