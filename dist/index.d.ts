@@ -1,16 +1,16 @@
 /**
- * przm Memory library entry point.
+ * Nomad Memory library entry point.
  *
  * Re-exports the pure modules that make up the memory subsystem so
  * downstream Node packages (przm, custom CLIs, alternate MCP wrappers)
- * can consume przm Memory directly without spawning the MCP stdio server.
+ * can consume Nomad Memory directly without spawning the MCP stdio server.
  *
  * Importing this module is side-effect-free. It does NOT load config,
  * open LanceDB, spin up embedding providers, or register any signal
  * handlers. The MCP server lives at `./server.js`; bin entries on the
  * package boot it explicitly.
  *
- * The MCP entry (`przm-memory`) and the CLI entry (`przm-memory-mcp`)
+ * The MCP entry (`nomad-memory`) and the CLI entry (`nomad-memory-mcp`)
  * continue to work unchanged for Claude Code / Claude Desktop users.
  *
  * Stability: the surface below is the public API. Internal modules

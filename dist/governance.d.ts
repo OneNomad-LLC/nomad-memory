@@ -10,7 +10,7 @@ import { Storage } from './storage.js';
  * 3. Memory poisoning checks — flags suspicious content patterns
  *
  * All checks are advisory — they never block ingestion.
- * LLM-enhanced when OPENROUTER_API_KEY is set, heuristic fallback otherwise.
+ * LLM-enhanced when an LLM is configured (see llm.ts), heuristic fallback otherwise.
  */
 export interface ContradictionResult {
     found: boolean;
@@ -63,6 +63,8 @@ export declare function measureSemanticDrift(config: SmartMemoryConfig, storage:
     domain?: string;
     windowDays?: number;
 }): Promise<DriftReport>;
+/** True when the text carries a high-severity injection pattern (instruction or identity override). */
+export declare function hasHighSeverityInjection(content: string): boolean;
 /**
  * Check recent memories for poisoning patterns.
  * All heuristic — no LLM needed.

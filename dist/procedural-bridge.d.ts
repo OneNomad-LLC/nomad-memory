@@ -1,13 +1,13 @@
 import { Storage } from './storage.js';
 /**
- * Procedural bridge — shared interchange between przm Memory and przm Voice.
+ * Procedural bridge — shared interchange between Nomad Memory and przm Voice.
  *
  * Both servers read/write a neutral JSON file at ~/.claude/procedural-bridge.json.
  * Neither imports code from the other. The AI client can also trigger sync
  * explicitly via tools.
  *
- * przm Memory exports its procedural rules with confidence > 0.3.
- * przm Memory imports Voice-sourced rules as new ProceduralRules with low initial confidence.
+ * Nomad Memory exports its procedural rules with confidence > 0.3.
+ * Nomad Memory imports Voice-sourced rules as new ProceduralRules with low initial confidence.
  *
  * Note: the `source` discriminator on BridgeRule still uses the legacy
  * `'engram' | 'persona'` literal so existing on-disk bridge files

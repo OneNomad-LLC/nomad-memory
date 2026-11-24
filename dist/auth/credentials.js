@@ -28,7 +28,7 @@ export function credentialsPath(path) {
     return join(homedir(), '.pyre', 'credentials.json');
 }
 function warn(msg) {
-    process.stderr.write(`przm-memory: credentials — ${msg}\n`);
+    process.stderr.write(`nomad-memory: credentials — ${msg}\n`);
 }
 function isStringArray(v) {
     return Array.isArray(v) && v.every(x => typeof x === 'string');

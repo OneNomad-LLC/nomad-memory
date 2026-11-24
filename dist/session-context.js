@@ -181,7 +181,7 @@ export async function buildSessionContext(storage, dataDir, opts = {}) {
     ].filter(Boolean);
     if (!sections.length)
         return '';
-    const header = '# From przm-memory\n\nLoaded automatically at session start. Search the store for anything deeper; write a handoff at commits and before long background work.';
+    const header = '# From nomad-memory\n\nLoaded automatically at session start. Search the store for anything deeper; write a handoff at commits and before long background work.';
     let out = [header, ...sections].join('\n\n');
     if (out.length > o.maxChars) {
         out = out.slice(0, o.maxChars - 60).replace(/\n[^\n]*$/, '') + '\n\n(cut at the size cap; search the store for more)';

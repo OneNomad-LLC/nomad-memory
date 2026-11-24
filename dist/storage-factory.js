@@ -40,7 +40,7 @@ import { readCredentials, credentialsExist } from './auth/credentials.js';
  */
 function logRouting(message) {
     try {
-        process.stderr.write(`przm-memory: ${message}\n`);
+        process.stderr.write(`nomad-memory: ${message}\n`);
     }
     catch {
         // ignore
@@ -167,7 +167,7 @@ async function createCloud(opts, reason, preReadCreds) {
     const apiKey = opts.apiKey ?? process.env.PYRE_API_KEY ?? creds?.api_key;
     if (!apiUrl || !apiKey) {
         throw new Error('STORAGE_BACKEND=cloud requires PYRE_API_URL and PYRE_API_KEY (or a valid ~/.pyre/credentials.json — ' +
-            'run `przm-memory-mcp login`).');
+            'run `nomad-memory-mcp login`).');
     }
     const { CloudStorageAdapter } = await import('./storage-cloud.js');
     const opted = reason.includes('auto-routed')
