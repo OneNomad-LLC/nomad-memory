@@ -55,12 +55,12 @@ export function parseClaudeCliOutput(stdout) {
 // cmd.exe quoting for the Windows shell, which an npm-installed `claude.cmd` needs. Every
 // argument here is ours (flags, a model name, a temp path); the prompt itself goes on stdin.
 const winQuote = (arg) => (arg === '' ? '""' : /[\s"&|<>^]/.test(arg) ? `"${arg.replace(/"/g, '""')}"` : arg);
-export async function claudeCliComplete(systemPrompt, userMessage) {
+export async function claudeCliComplete(systemPrompt, userMessage, model = claudeCliModel()) {
     const dir = mkdtempSync(join(tmpdir(), 'nomad-memory-cli-'));
     const systemFile = join(dir, 'system.txt');
     writeFileSync(systemFile, systemPrompt, { encoding: 'utf8', mode: 0o600 });
     const command = memEnv('CLAUDE_CLI') ?? 'claude';
-    const args = claudeCliArgs(claudeCliModel(), systemFile);
+    const args = claudeCliArgs(model, systemFile);
     const windows = process.platform === 'win32';
     try {
         return await new Promise((resolve, reject) => {

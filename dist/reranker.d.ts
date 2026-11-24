@@ -1,14 +1,14 @@
 /**
  * Cross-encoder reranking using @huggingface/transformers.
  *
- * Uses a small cross-encoder model (~50MB, ONNX, CPU) to score
- * (query, document) pairs. Much more accurate than bi-encoder
- * similarity alone. Benchmarks show Hit@1 improvement from ~63% to ~83%.
+ * A small cross-encoder (ONNX, CPU) reads the query and one document together and scores how
+ * well the document answers the query, which a bi-encoder's vector similarity can only
+ * approximate.
  *
  * Default model: Xenova/ms-marco-MiniLM-L-6-v2
- * Override: ENGRAM_RERANK_MODEL env var
+ * Override: NOMAD_MEMORY_RERANK_MODEL (ENGRAM_RERANK_MODEL still read)
  *
- * Lazy-loaded on first call (same pattern as embedding model).
+ * Lazy-loaded on first call (same pattern as the embedding model).
  */
 export interface RerankResult {
     index: number;
@@ -16,7 +16,7 @@ export interface RerankResult {
 }
 /**
  * Rerank documents against a query using a cross-encoder.
- * Returns sorted results with scores, highest first.
+ * Returns sorted results with scores (the model's relevance logit), highest first.
  */
 export declare function rerank(query: string, documents: string[], topK?: number): Promise<RerankResult[]>;
 /**

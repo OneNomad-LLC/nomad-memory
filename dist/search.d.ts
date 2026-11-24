@@ -2,7 +2,7 @@ import type { SmartMemoryConfig, SearchResult } from './types.js';
 import { Storage } from './storage.js';
 /**
  * Hybrid memory search: native ANN vector search (LanceDB) + keyword
- * with IDF weighting + temporal/entity/phrase boosting + spreading activation.
+ * (BM25) + temporal/entity/phrase boosting + spreading activation.
  */
 export declare function search(config: SmartMemoryConfig, storage: Storage, query: string, maxResults?: number, filters?: {
     domain?: string;
