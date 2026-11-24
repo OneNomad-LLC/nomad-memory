@@ -1,3 +1,4 @@
+import { memEnv, dirWithLegacyFallback } from './env.js';
 import OpenAI from 'openai';
 import { accessSync, mkdirSync, constants as fsConstants } from 'node:fs';
 import { homedir } from 'node:os';
@@ -37,8 +38,8 @@ const OPENROUTER_BASE_URL = 'https://openrouter.ai/api/v1';
  * needs no key: local servers usually don't check one, but the OpenAI SDK insists on a value.
  */
 function resolveLlmEndpoint(): { baseURL: string; apiKey: string } | null {
-  const baseURL = process.env.PRZM_MEMORY_LLM_BASE_URL ?? process.env.ENGRAM_LLM_BASE_URL ?? OPENROUTER_BASE_URL;
-  const apiKey = process.env.PRZM_MEMORY_LLM_API_KEY
+  const baseURL = memEnv('LLM_BASE_URL', ['ENGRAM_LLM_BASE_URL']) ?? OPENROUTER_BASE_URL;
+  const apiKey = memEnv('LLM_API_KEY')
     ?? process.env.OPENROUTER_API_KEY
     ?? (baseURL !== OPENROUTER_BASE_URL ? 'local' : undefined);
   return apiKey ? { baseURL, apiKey } : null;
@@ -57,9 +58,7 @@ export function isLlmAvailable(): boolean {
 }
 
 export function getLlmModelName(): string {
-  return process.env.PRZM_MEMORY_LLM_MODEL
-    ?? process.env.ENGRAM_MODEL
-    ?? process.env.SMART_MEMORY_MODEL
+  return memEnv('LLM_MODEL', ['ENGRAM_MODEL', 'SMART_MEMORY_MODEL'])
     ?? 'anthropic/claude-haiku-4.5';
 }
 
@@ -98,9 +97,7 @@ export const DEFAULT_EMBEDDING_MODEL = 'Xenova/bge-small-en-v1.5';
 export const LEGACY_EMBEDDING_MODEL = 'Xenova/all-MiniLM-L6-v2';
 
 export function getEmbeddingModelName(): string {
-  return process.env.PRZM_MEMORY_EMBEDDING_MODEL
-    ?? process.env.ENGRAM_EMBEDDING_MODEL
-    ?? process.env.SMART_MEMORY_EMBEDDING_MODEL
+  return memEnv('EMBEDDING_MODEL', ['ENGRAM_EMBEDDING_MODEL', 'SMART_MEMORY_EMBEDDING_MODEL'])
     ?? DEFAULT_EMBEDDING_MODEL;
 }
 
@@ -248,7 +245,7 @@ function makeProgressReporter(): (progress: unknown) => void {
  * stalls, so it falls back to ~/.cache/przm-memory/models.
  */
 export function resolveModelCacheDir(libraryDefault: string): string {
-  const override = process.env.PRZM_MEMORY_MODEL_DIR;
+  const override = memEnv('MODEL_DIR');
   if (override) {
     mkdirSync(override, { recursive: true });
     return override;
@@ -258,7 +255,7 @@ export function resolveModelCacheDir(libraryDefault: string): string {
     accessSync(libraryDefault, fsConstants.W_OK);
     return libraryDefault;
   } catch {
-    const fallback = join(homedir(), '.cache', 'przm-memory', 'models');
+    const fallback = dirWithLegacyFallback(join(homedir(), '.cache'), 'models');
     mkdirSync(fallback, { recursive: true });
     return fallback;
   }

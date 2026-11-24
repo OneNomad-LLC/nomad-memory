@@ -20,7 +20,7 @@ const LANE_SH = join(import.meta.dirname, '..', 'hooks', 'lane.sh');
 function bashLane(env: Record<string, string | undefined>): string {
   const clean: Record<string, string> = { PATH: process.env.PATH ?? '/usr/bin:/bin', HOME: '/home/someone' };
   for (const [k, v] of Object.entries(env)) if (v !== undefined) clean[k] = v;
-  return execFileSync('bash', ['-c', `source "${LANE_SH}"; przm_lane`], { env: clean, encoding: 'utf8' });
+  return execFileSync('bash', ['-c', `source "${LANE_SH}"; nomad_lane`], { env: clean, encoding: 'utf8' });
 }
 
 const CASES: { label: string; env: Record<string, string | undefined>; lane: string }[] = [
@@ -30,8 +30,8 @@ const CASES: { label: string; env: Record<string, string | undefined>; lane: str
   { label: 'trailing slashes', env: { CLAUDE_CONFIG_DIR: '/home/someone/.claude-work//' }, lane: 'claude-work' },
   { label: 'no leading dot, mixed case', env: { CLAUDE_CONFIG_DIR: '/opt/Claude Client' }, lane: 'claude-client' },
   { label: 'empty config dir', env: { CLAUDE_CONFIG_DIR: '' }, lane: 'claude' },
-  { label: 'override wins', env: { CLAUDE_CONFIG_DIR: '/home/someone/.claude-work', PRZM_MEMORY_LANE: 'Night Shift' }, lane: 'night-shift' },
-  { label: 'blank override is ignored', env: { CLAUDE_CONFIG_DIR: '/home/someone/.claude-work', PRZM_MEMORY_LANE: '  ' }, lane: 'claude-work' },
+  { label: 'override wins', env: { CLAUDE_CONFIG_DIR: '/home/someone/.claude-work', NOMAD_MEMORY_LANE: 'Night Shift' }, lane: 'night-shift' },
+  { label: 'blank override is ignored', env: { CLAUDE_CONFIG_DIR: '/home/someone/.claude-work', NOMAD_MEMORY_LANE: '  ' }, lane: 'claude-work' },
 ];
 
 describe('lane naming', () => {

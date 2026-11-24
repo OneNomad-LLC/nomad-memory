@@ -89,14 +89,14 @@ describe('handoff commands', () => {
       const capture = (s: string) => { out += s; };
       const capErr = (s: string) => { err += s; };
 
-      await withEnv({ PRZM_MEMORY_DATA_DIR: dir, PRZM_MEMORY_LANE: 'claude' }, async () => {
+      await withEnv({ NOMAD_MEMORY_DATA_DIR: dir, NOMAD_MEMORY_LANE: 'claude' }, async () => {
         assert.equal(await main(['handoff', 'send', '--to', 'claude-work', '--task', 'push the branch', '--next', 'rebase onto stage'], capture, capErr), 0);
       });
       const stamp = /Sent (\S+) from claude to claude-work/.exec(out)?.[1];
       assert.ok(stamp, out);
 
       out = '';
-      await withEnv({ PRZM_MEMORY_DATA_DIR: dir, PRZM_MEMORY_LANE: 'claude-work' }, async () => {
+      await withEnv({ NOMAD_MEMORY_DATA_DIR: dir, NOMAD_MEMORY_LANE: 'claude-work' }, async () => {
         assert.equal(await main(['inbox', '--format', 'json'], capture, capErr), 0);
         const parsed = JSON.parse(out) as { lane: string; handoffs: { stamp: string }[] };
         assert.equal(parsed.lane, 'claude-work');
@@ -116,7 +116,7 @@ describe('handoff commands', () => {
     const { dir, cleanup } = tmpDir();
     try {
       let err = '';
-      await withEnv({ PRZM_MEMORY_DATA_DIR: dir }, async () => {
+      await withEnv({ NOMAD_MEMORY_DATA_DIR: dir }, async () => {
         assert.equal(await main(['handoff', 'send', '--task', 'no lane'], () => {}, s => { err += s; }), 2);
       });
       assert.match(err, /needs --to/);

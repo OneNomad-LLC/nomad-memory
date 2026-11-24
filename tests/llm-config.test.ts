@@ -11,9 +11,9 @@ import { join } from 'node:path';
 import { isLlmAvailable, getLlmModelName, resolveModelCacheDir } from '../src/llm.js';
 
 const LLM_VARS = [
-  'PRZM_MEMORY_LLM_BASE_URL', 'ENGRAM_LLM_BASE_URL',
-  'PRZM_MEMORY_LLM_API_KEY', 'OPENROUTER_API_KEY',
-  'PRZM_MEMORY_LLM_MODEL', 'ENGRAM_MODEL', 'SMART_MEMORY_MODEL',
+  'NOMAD_MEMORY_LLM_BASE_URL', 'ENGRAM_LLM_BASE_URL',
+  'NOMAD_MEMORY_LLM_API_KEY', 'OPENROUTER_API_KEY',
+  'NOMAD_MEMORY_LLM_MODEL', 'ENGRAM_MODEL', 'SMART_MEMORY_MODEL',
 ];
 
 describe('LLM settings', () => {
@@ -24,23 +24,23 @@ describe('LLM settings', () => {
   });
 
   it('a key alone uses OpenRouter, under either name', () => {
-    process.env.PRZM_MEMORY_LLM_API_KEY = 'k';
+    process.env.NOMAD_MEMORY_LLM_API_KEY = 'k';
     assert.equal(isLlmAvailable(), true);
-    delete process.env.PRZM_MEMORY_LLM_API_KEY;
+    delete process.env.NOMAD_MEMORY_LLM_API_KEY;
     process.env.OPENROUTER_API_KEY = 'k';
     assert.equal(isLlmAvailable(), true);
   });
 
   it('a custom base URL needs no key, under either name', () => {
-    process.env.PRZM_MEMORY_LLM_BASE_URL = 'http://localhost:11434/v1';
+    process.env.NOMAD_MEMORY_LLM_BASE_URL = 'http://localhost:11434/v1';
     assert.equal(isLlmAvailable(), true);
-    delete process.env.PRZM_MEMORY_LLM_BASE_URL;
+    delete process.env.NOMAD_MEMORY_LLM_BASE_URL;
     process.env.ENGRAM_LLM_BASE_URL = 'http://localhost:11434/v1';
     assert.equal(isLlmAvailable(), true);
   });
 
   it('OpenRouter named explicitly still needs a key', () => {
-    process.env.PRZM_MEMORY_LLM_BASE_URL = 'https://openrouter.ai/api/v1';
+    process.env.NOMAD_MEMORY_LLM_BASE_URL = 'https://openrouter.ai/api/v1';
     assert.equal(isLlmAvailable(), false);
   });
 
@@ -48,19 +48,19 @@ describe('LLM settings', () => {
     assert.equal(getLlmModelName(), 'anthropic/claude-haiku-4.5');
     process.env.ENGRAM_MODEL = 'legacy/model';
     assert.equal(getLlmModelName(), 'legacy/model');
-    process.env.PRZM_MEMORY_LLM_MODEL = 'new/model';
+    process.env.NOMAD_MEMORY_LLM_MODEL = 'new/model';
     assert.equal(getLlmModelName(), 'new/model');
   });
 });
 
 describe('resolveModelCacheDir', () => {
-  it('PRZM_MEMORY_MODEL_DIR wins', () => {
+  it('NOMAD_MEMORY_MODEL_DIR wins', () => {
     const dir = mkdtempSync(join(tmpdir(), 'przm-models-'));
-    process.env.PRZM_MEMORY_MODEL_DIR = join(dir, 'override');
+    process.env.NOMAD_MEMORY_MODEL_DIR = join(dir, 'override');
     try {
       assert.equal(resolveModelCacheDir(join(dir, 'default')), join(dir, 'override'));
     } finally {
-      delete process.env.PRZM_MEMORY_MODEL_DIR;
+      delete process.env.NOMAD_MEMORY_MODEL_DIR;
       rmSync(dir, { recursive: true, force: true });
     }
   });
@@ -82,7 +82,7 @@ describe('resolveModelCacheDir', () => {
     try {
       const blocker = join(dir, 'not-a-dir');
       writeFileSync(blocker, '');
-      assert.equal(resolveModelCacheDir(join(blocker, 'cache')), join(dir, '.cache', 'przm-memory', 'models'));
+      assert.equal(resolveModelCacheDir(join(blocker, 'cache')), join(dir, '.cache', 'nomad-memory', 'models'));
     } finally {
       process.env.HOME = saved.HOME;
       process.env.USERPROFILE = saved.USERPROFILE;

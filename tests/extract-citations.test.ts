@@ -14,7 +14,7 @@ process.env.ENGRAM_NO_AUTO_CLOUD = '1';
 process.env.ENGRAM_SKIP_EMBED = '1';
 delete process.env.OPENROUTER_API_KEY;
 delete process.env.ENGRAM_LLM_BASE_URL;
-delete process.env.PRZM_MEMORY_LLM_BASE_URL;
+delete process.env.NOMAD_MEMORY_LLM_BASE_URL;
 
 import { keepCitedCandidates, extractFromConversation } from '../src/extractor.js';
 import { Storage } from '../src/storage.js';

@@ -12,6 +12,7 @@
  * holds the two to each other.
  */
 
+import { memEnv } from './env.js';
 import { basename } from 'node:path';
 
 const DEFAULT_LANE = 'claude';
@@ -29,7 +30,7 @@ export function laneFromConfigDir(configDir: string | undefined): string {
 }
 
 export function currentLane(env: NodeJS.ProcessEnv = process.env): string {
-  const override = env.PRZM_MEMORY_LANE?.trim();
+  const override = memEnv('LANE', [], env)?.trim();
   if (override) return normalizeLane(override);
   return laneFromConfigDir(env.CLAUDE_CONFIG_DIR);
 }

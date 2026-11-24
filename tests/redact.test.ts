@@ -14,7 +14,7 @@ process.env.ENGRAM_NO_AUTO_CLOUD = '1';
 process.env.ENGRAM_SKIP_EMBED = '1';
 delete process.env.OPENROUTER_API_KEY;
 delete process.env.ENGRAM_LLM_BASE_URL;
-delete process.env.PRZM_MEMORY_LLM_BASE_URL;
+delete process.env.NOMAD_MEMORY_LLM_BASE_URL;
 
 import { redactSecrets, REDACTED } from '../src/redact.js';
 import { Storage } from '../src/storage.js';
@@ -82,9 +82,9 @@ describe('write paths', () => {
     }
   });
 
-  it('PRZM_MEMORY_REDACT_SECRETS=0 stores raw text', async () => {
+  it('NOMAD_MEMORY_REDACT_SECRETS=0 stores raw text', async () => {
     const dir = mkdtempSync(join(tmpdir(), 'przm-redact-'));
-    process.env.PRZM_MEMORY_REDACT_SECRETS = '0';
+    process.env.NOMAD_MEMORY_REDACT_SECRETS = '0';
     try {
       const config = loadConfig({ dataDir: dir, enableChunking: false });
       const storage = new Storage(dir);
@@ -93,7 +93,7 @@ describe('write paths', () => {
       const [chunk] = await ingest(config, storage, [{ content: raw }]);
       assert.equal(chunk.content, raw);
     } finally {
-      delete process.env.PRZM_MEMORY_REDACT_SECRETS;
+      delete process.env.NOMAD_MEMORY_REDACT_SECRETS;
       rmSync(dir, { recursive: true, force: true });
     }
   });

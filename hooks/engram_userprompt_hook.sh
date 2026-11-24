@@ -10,7 +10,11 @@
 # Prints nothing when there is nothing new, and nothing on any failure. It never
 # blocks a prompt.
 
-DATA_DIR="${PRZM_MEMORY_DATA_DIR:-${ENGRAM_DATA_DIR:-${SMART_MEMORY_DATA_DIR:-$HOME/.claude/przm-memory}}}"
+DATA_DIR="${NOMAD_MEMORY_DATA_DIR:-${PRZM_MEMORY_DATA_DIR:-${ENGRAM_DATA_DIR:-${SMART_MEMORY_DATA_DIR:-}}}}"
+if [ -z "$DATA_DIR" ]; then  # default; keep a pre-rename przm-memory store if it is the only one
+  DATA_DIR="$HOME/.claude/nomad-memory"
+  [ -d "$DATA_DIR" ] || [ ! -d "$HOME/.claude/przm-memory" ] || DATA_DIR="$HOME/.claude/przm-memory"
+fi
 PAYLOAD=$(cat 2>/dev/null || true)
 
 [ -d "$DATA_DIR/handoffs" ] || exit 0
@@ -24,5 +28,5 @@ SESSION=$(printf '%s' "$PAYLOAD" | node -e '
 ' 2>/dev/null)
 [ -n "$SESSION" ] || exit 0
 
-PRZM_MEMORY_DATA_DIR="$DATA_DIR" node "$CLI" inbox --new --session "$SESSION" 2>/dev/null || true
+NOMAD_MEMORY_DATA_DIR="$DATA_DIR" node "$CLI" inbox --new --session "$SESSION" 2>/dev/null || true
 exit 0

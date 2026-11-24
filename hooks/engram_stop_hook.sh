@@ -15,18 +15,22 @@
 # session could resume from another account's work; that file is removed here.
 # Checkpoints and announcement records older than two weeks are pruned.
 
-DATA_DIR="${PRZM_MEMORY_DATA_DIR:-${ENGRAM_DATA_DIR:-${SMART_MEMORY_DATA_DIR:-$HOME/.claude/przm-memory}}}"
+DATA_DIR="${NOMAD_MEMORY_DATA_DIR:-${PRZM_MEMORY_DATA_DIR:-${ENGRAM_DATA_DIR:-${SMART_MEMORY_DATA_DIR:-}}}}"
+if [ -z "$DATA_DIR" ]; then  # default; keep a pre-rename przm-memory store if it is the only one
+  DATA_DIR="$HOME/.claude/nomad-memory"
+  [ -d "$DATA_DIR" ] || [ ! -d "$HOME/.claude/przm-memory" ] || DATA_DIR="$HOME/.claude/przm-memory"
+fi
 
 # Capture the Claude Code payload: { session_id, transcript_path, cwd, stop_hook_active }.
 PAYLOAD=$(cat 2>/dev/null || true)
 
 # shellcheck source=lane.sh
 . "$(dirname "${BASH_SOURCE[0]}")/lane.sh" 2>/dev/null
-LANE="$(przm_lane 2>/dev/null || printf 'claude')"
+LANE="$(nomad_lane 2>/dev/null || printf 'claude')"
 
 ENGRAM_DATA_DIR="$DATA_DIR" \
 CC_PAYLOAD="$PAYLOAD" \
-PRZM_LANE="$LANE" \
+NOMAD_LANE="$LANE" \
 node -e "
   (() => {
     const fs = require('fs');
@@ -97,7 +101,7 @@ node -e "
       timestamp: new Date().toISOString(),
       sessionId,
       reason: 'context-pressure',
-      lane: process.env.PRZM_LANE || 'claude',
+      lane: process.env.NOMAD_LANE || 'claude',
       ...(project && project !== '/' && project !== '.' ? { project } : {}),
       currentTask: userMsgs.length ? userMsgs[userMsgs.length - 1].split('\n')[0].slice(0, 200) : '',
       completed: [...writeSet].slice(-20).map(f => 'edited ' + f),
@@ -145,7 +149,7 @@ if [ -f "$CLI" ] && command -v node >/dev/null 2>&1; then
     process.stdout.write((p.transcript_path || "") + " " + (p.session_id || ""));
   ' 2>/dev/null)
   if [ -n "$TRANSCRIPT" ] && [ -n "$SESSION" ]; then
-    PRZM_MEMORY_DATA_DIR="$DATA_DIR" nohup node "$CLI" grade --transcript "$TRANSCRIPT" --session "$SESSION" >/dev/null 2>&1 &
+    NOMAD_MEMORY_DATA_DIR="$DATA_DIR" nohup node "$CLI" grade --transcript "$TRANSCRIPT" --session "$SESSION" >/dev/null 2>&1 &
   fi
 fi
 

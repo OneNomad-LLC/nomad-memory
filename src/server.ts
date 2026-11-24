@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 
+import { memEnv } from './env.js';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import { z } from 'zod';
@@ -1479,7 +1480,7 @@ server.registerPrompt(
 // Implementation: after all canonical registrations are done, copy each
 // registered-tool entry into the SDK's internal registry under the old
 // name. Shares the same handler and schema — no logic duplication.
-if (process.env.PRZM_MEMORY_LEGACY_ALIASES === '1') {
+if (memEnv('LEGACY_ALIASES') === '1') {
   const rt = (server as unknown as { _registeredTools: Record<string, unknown> })._registeredTools;
   const aliases: [string, string][] = [
     ['memory-search',           'engram-search'],

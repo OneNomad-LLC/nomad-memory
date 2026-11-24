@@ -1,3 +1,4 @@
+import { memEnv } from './env.js';
 import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { homedir } from 'node:os';
@@ -45,7 +46,7 @@ export interface ProceduralInterchange {
  * load it read the real file under $HOME from inside the test suite.
  */
 function bridgePath(): string {
-  return process.env.PRZM_MEMORY_BRIDGE_PATH ?? process.env.ENGRAM_BRIDGE_PATH ?? join(homedir(), '.claude', 'procedural-bridge.json');
+  return memEnv('BRIDGE_PATH', ['ENGRAM_BRIDGE_PATH']) ?? join(homedir(), '.claude', 'procedural-bridge.json');
 }
 
 // ── File I/O ───────────────────────────────────────────────────────

@@ -1,3 +1,4 @@
+import { memEnv } from './env.js';
 import { readFileSync, writeFileSync, existsSync, unlinkSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 import type { SmartMemoryConfig } from './types.js';
@@ -68,12 +69,12 @@ function writeMaintenanceState(dataDir: string, state: MaintenanceState): void {
 }
 
 export function autoMaintainEnabled(): boolean {
-  const v = process.env.PRZM_MEMORY_AUTO_MAINTAIN ?? process.env.ENGRAM_AUTO_MAINTAIN;
+  const v = memEnv('AUTO_MAINTAIN', ['ENGRAM_AUTO_MAINTAIN']);
   return v !== '0' && v !== 'false';
 }
 
 export function maintainIntervalMs(): number {
-  const raw = process.env.PRZM_MEMORY_MAINTAIN_INTERVAL_HOURS ?? process.env.ENGRAM_MAINTAIN_INTERVAL_HOURS;
+  const raw = memEnv('MAINTAIN_INTERVAL_HOURS', ['ENGRAM_MAINTAIN_INTERVAL_HOURS']);
   const hours = raw ? parseFloat(raw) : 24;
   return (Number.isFinite(hours) && hours > 0 ? hours : 24) * 3_600_000;
 }

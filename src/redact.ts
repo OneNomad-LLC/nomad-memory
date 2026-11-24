@@ -9,6 +9,7 @@
  *
  * On by default; `PRZM_MEMORY_REDACT_SECRETS=0` turns it off.
  */
+import { memEnv } from './env.js';
 
 export const REDACTED = '[REDACTED]';
 
@@ -43,7 +44,7 @@ function looksSecret(value: string): boolean {
 }
 
 export function redactionEnabled(): boolean {
-  const v = process.env.PRZM_MEMORY_REDACT_SECRETS;
+  const v = memEnv('REDACT_SECRETS');
   return v !== '0' && v !== 'false';
 }
 
