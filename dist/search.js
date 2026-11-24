@@ -346,6 +346,9 @@ export async function search(config, storage, query, maxResults, filters) {
     const seeds = Array.from(scored.values())
         .sort((a, b) => b.score - a.score)
         .slice(0, 5);
+    // A linked memory is a result like any other: it must pass the caller's filter (links cross
+    // domains), and it can't be archived or a parent container.
+    const walkable = (c) => c !== null && c.tier !== 'archive' && c.consolidationLevel !== -1 && (!allowedIds || allowedIds.has(c.id));
     const MAX_EDGES = 5;
     for (const parent of seeds) {
         const edges = parent.chunk.relatedMemories.slice(0, MAX_EDGES);
@@ -359,7 +362,7 @@ export async function search(config, storage, query, maxResults, filters) {
             }
             else {
                 const hop1Chunk = await storage.getChunk(edge.targetId);
-                if (hop1Chunk && hop1Chunk.tier !== 'archive') {
+                if (walkable(hop1Chunk)) {
                     scored.set(edge.targetId, { chunk: hop1Chunk, score: hop1Activation });
                     for (const hop2Edge of hop1Chunk.relatedMemories.slice(0, MAX_EDGES)) {
                         if (scored.has(hop2Edge.targetId))
@@ -367,7 +370,7 @@ export async function search(config, storage, query, maxResults, filters) {
                         const hop2Multiplier = isTemporalQuery && hop2Edge.relationship === 'temporal' ? 1.5 : 1.0;
                         const hop2Activation = parent.score * edge.weight * hop2Edge.weight * edgeMultiplier * hop2Multiplier * 0.25;
                         const hop2Chunk = await storage.getChunk(hop2Edge.targetId);
-                        if (hop2Chunk && hop2Chunk.tier !== 'archive') {
+                        if (walkable(hop2Chunk)) {
                             scored.set(hop2Edge.targetId, { chunk: hop2Chunk, score: hop2Activation });
                         }
                     }
@@ -398,17 +401,17 @@ export async function search(config, storage, query, maxResults, filters) {
     // of one memory can't fill the results and crowd other memories out.
     const parentsSeen = new Set();
     for (const entry of sorted) {
-        const parentId = entry.chunk.parentChunkId;
-        if (parentId) {
-            if (parentsSeen.has(parentId))
-                continue;
-            parentsSeen.add(parentId);
-        }
-        const tokens = estimateTokens(entry.chunk.content) + 10;
-        if (tokensUsed + tokens > config.maxRecallTokens)
-            break;
         if (results.length >= limit)
             break;
+        const parentId = entry.chunk.parentChunkId;
+        if (parentId && parentsSeen.has(parentId))
+            continue;
+        const tokens = estimateTokens(entry.chunk.content) + 10;
+        // An item that doesn't fit the token budget is skipped; smaller ones after it still fit.
+        if (tokensUsed + tokens > config.maxRecallTokens)
+            continue;
+        if (parentId)
+            parentsSeen.add(parentId);
         const vectorSimilarity = vectorSimById.get(entry.chunk.id);
         results.push({
             chunk: entry.chunk,
