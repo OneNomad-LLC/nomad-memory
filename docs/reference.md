@@ -13,7 +13,7 @@ The core idea is that memory shouldn't just be "find similar text." When someone
 ## Table of Contents
 
 - [Benchmark Results](#benchmark-results)
-- [How It Works](#how-it-works)
+- [How it works](#how-it-works)
 - [Compatibility](#compatibility)
 - [Installation](#installation) (Claude Code, Claude Desktop, Cursor/Windsurf/Cline, Source)
 - [Configuration](#configuration)
@@ -28,10 +28,11 @@ The core idea is that memory shouldn't just be "find similar text." When someone
 
 ## Benchmark Results
 
-Retrieval only: did nomad-memory's search put the evidence in its top 10? No model in the loop,
-no API key, no reranker. This is not QA accuracy (whether a model then answers correctly); the
-harness for that exists but hasn't been run with a grader yet. Methodology, subsets and
-caveats: [BENCHMARKS.md](../BENCHMARKS.md). Result files: [`benchmarks/results/published/`](../benchmarks/results/published).
+These tables are retrieval only: whether nomad-memory's search put the evidence in its top 10,
+with no model in the loop, no API key and no reranker. That is not QA accuracy (whether a model
+then answers correctly). QA has been run once, on a 70-question sample of LongMemEval S: 97.1%
+with gpt-4o as judge, 92.9% with a stricter Claude judge. That run, the methods, the subsets and
+a comparison with other memory systems are in [BENCHMARKS.md](../BENCHMARKS.md). Result files: [`benchmarks/results/published/`](../benchmarks/results/published).
 
 Measured 2026-11-20 on an AMD Ryzen 7 9800X3D (16 threads, 31 GB), Windows 11, Node 25, with
 `Xenova/bge-small-en-v1.5` embeddings on the CPU. Several runs shared the machine, so latency is
@@ -60,34 +61,39 @@ On FactConsolidation the single-hop questions score 99% to 100% answer_hit@10 at
 and the multi-hop ones 36% (6K) falling to 7% (262K): the second hop's fact shares few words
 with the question. A hit also doesn't show the newer of two conflicting facts was preferred.
 
+BM25 keyword search went in on 2026-11-24, after these tables were measured. It raised
+LongMemEval S session level to 86.4% recall_all@5, 94.9% recall_all@10 and 0.897 NDCG@10, and
+BEAM 100K to 15.8%, 22.9% and 0.248. The other rows have not been re-run.
+
 How to read these:
 
-- **recall_all@k** counts a question only when *every* evidence item is in the top k.
+- recall_all@k counts a question only when every evidence item is in the top k.
   recall_any@k (at least one) is in the result files too: on LongMemEval S session level it is
   95.1% and 99.2%. Earlier releases of this README quoted recall_any with abstention questions
   included; the numbers above replace those.
-- **Abstention questions are excluded** from LongMemEval retrieval scoring, as in the official
+- Abstention questions are excluded from LongMemEval retrieval scoring, as in the official
   evaluation. BEAM questions that name no evidence messages (abstention, and many others) are
   left out of retrieval scoring and counted in the result files.
-- **Session level vs turn level.** Session level finds the right conversation, but hands a
+- Session level finds the right conversation, but hands a
   model about 31K tokens to read per question. Turn level hands over about 3K, and finds all
   the evidence far less often.
-- **M is the honest test.** LongMemEval M haystacks run to about 1.5M tokens, past any context
+- LongMemEval M is the harder test. Its haystacks run to about 1.5M tokens, past any context
   window, and recall falls from S to M. BEAM is harder still: multi-hop, event-ordering and
   summarisation questions need many messages, and recall_all rarely gets them all.
-- **Runs and variance.** LongMemEval stores one haystack per question and runs one query, so a
+- LongMemEval stores one haystack per question and runs one query, so a
   run is deterministic: three runs of a 60-question sample matched exactly (standard deviation
   0, latency aside). BEAM and MemoryAgentBench run many queries against one store, so they were
   repeated where time allowed. Subsets are fixed (the first N of each type, the first N chats)
   and named in each result file.
-- **Write latency** (per item, embedding plus its share of a batched store write) ran from
+- Write latency (per item, embedding plus its share of a batched store write) ran from
   6 ms p50 for one-line facts to 107 ms p50 for 2,000-character sessions; each result file
   has its own.
 
-Numbers from other memory systems are not listed: we haven't measured them under this harness,
-and most publish QA accuracy, a different metric.
+Numbers from other memory systems are in [BENCHMARKS.md](../BENCHMARKS.md#how-this-compares).
+We haven't measured them ourselves, and most publish QA accuracy, a different metric from the
+tables above.
 
-## How It Works
+## How it works
 
 ### The Search Pipeline
 
@@ -95,7 +101,7 @@ This is where the interesting stuff happens. A query goes through nine stages be
 
 **Stage 1: Signal Extraction.** Before any search happens, the query gets parsed for dates, entities (proper nouns), quoted phrases, and temporal language. If someone writes "What was Matt working on before he switched jobs in June?" the system extracts the date (June), the entity (Matt), and flags it as a temporal inference query because of the word "before."
 
-**Stage 2: Vector Search.** Standard ANN search against LanceDB using cosine distance on 384-dim embeddings. This handles the "find semantically similar stuff" part. Candidates must clear a similarity floor calibrated per model family (0.42 for the default bge-small, 0.25 for MiniLM-class models) — floors live in the model profile in `src/llm.ts` and the `tests/alien-query-floor.test.ts` calibration suite keeps them honest.
+**Stage 2: Vector Search.** Standard ANN search against LanceDB using cosine distance on 384-dim embeddings. This handles the "find semantically similar stuff" part. Candidates must clear a similarity floor calibrated per model family (0.42 for the default bge-small, 0.25 for MiniLM-class models). Floors live in the model profile in `src/llm.ts` and the `tests/alien-query-floor.test.ts` calibration suite keeps them honest.
 
 **Stage 3: BM25 Keyword Scoring.** Each memory gets a BM25 score against the query: rare terms count more than common ones, a term that appears several times counts more than once (with diminishing returns), and long memories are discounted. Words are stemmed, so "visited" matches "visit". Proper nouns get an extra 1.5x boost. The keyword ranking is fused with the vector ranking by reciprocal rank.
 
@@ -133,10 +139,10 @@ Promotion isn't just about age. A memory moves to long-term if it's been recalle
 
 Every chunk carries an `origin` tag that distinguishes user-asserted memory from auto-derived memory:
 
-- **`user`** — written explicitly via `engram-ingest`. Treated as canonical user-territory: the consolidator never auto-merges, near-duplicate-deletes, or archives these. Importance still decays normally, but the content and lifecycle stay sacred.
-- **`extracted`** — pulled from a conversation by `engram-extract` or the Mem0 provider.
-- **`imported`** — bulk-loaded via `engram-import`.
-- **`derived`** — produced by consolidation (e.g. episodic-to-semantic summaries).
+- `user`: written explicitly via `engram-ingest`. Treated as canonical user-territory: the consolidator never auto-merges, near-duplicate-deletes, or archives these. Importance still decays normally, but the content and lifecycle stay sacred.
+- `extracted`: pulled from a conversation by `engram-extract` or the Mem0 provider.
+- `imported`: bulk-loaded via `engram-import`.
+- `derived`: produced by consolidation (e.g. episodic-to-semantic summaries).
 
 The split mirrors the journal pattern in [przm Voice](https://github.com/OneNomad-LLC/przm-voice) (persona): a clean ownership boundary between what the user said and what the system inferred. If you want auto-extracted memories to lose to your hand-written ones in a near-duplicate fight, this is what makes that happen.
 
@@ -217,9 +223,9 @@ The `SessionStart` hook runs `nomad-memory-mcp context` and Claude Code adds its
 
 A feedback loop that lets the system learn which memories are actually useful:
 
-- **Helpful**: importance +0.05, triggers reconsolidation, strengthens graph edges to co-recalled memories
-- **Corrected**: importance -0.10 (memory was wrong)
-- **Irrelevant**: importance -0.05
+- Helpful: importance +0.05, triggers reconsolidation, strengthens graph edges to co-recalled memories
+- Corrected: importance -0.10 (memory was wrong)
+- Irrelevant: importance -0.05
 
 If a memory gets marked irrelevant 3+ times out of the last 5 recalls, its importance drops sharply and it may get archived.
 
@@ -237,7 +243,7 @@ Run it by hand to see what it would do:
 nomad-memory-mcp grade --transcript ~/.claude/projects/<project>/<session>.jsonl --session <id> --final --dry-run
 ```
 
-### Knowledge Graph Auto-Population
+### Knowledge graph auto-population
 
 When a memory is ingested, the system heuristically extracts entity-relationship triples and adds them to the knowledge graph automatically. It detects 12 relationship types including `works-at`, `uses`, `depends-on`, `prefers`, `chose`, `located-in`, and more. This means the knowledge graph grows passively as memories accumulate, without needing explicit `engram-kg-add` calls for every fact.
 
@@ -245,9 +251,9 @@ When a memory is ingested, the system heuristically extracts entity-relationship
 
 Advisory checks that flag potential issues without auto-deleting anything:
 
-- **Contradiction detection**: Combines vector similarity, keyword heuristics, and optional LLM analysis to find memories that conflict with each other. Flags them for review.
-- **Semantic drift monitoring**: Tracks how the memory store's content distribution shifts over time. Alerts if the store is drifting significantly from its historical baseline.
-- **Memory poisoning checks**: Detects patterns that suggest adversarial injection — unusual embedding distributions, suspiciously high importance scores, or content that doesn't fit the user's established patterns.
+- Contradiction detection combines vector similarity, keyword heuristics and optional LLM analysis to find memories that conflict with each other, and flags them for review.
+- Semantic drift monitoring tracks how the store's content distribution shifts over time, and alerts if it moves far from its historical baseline.
+- Memory poisoning checks look for signs of adversarial injection: unusual embedding distributions, suspiciously high importance scores, or content that doesn't fit the user's established patterns.
 
 ### Adaptive Forgetting
 
@@ -257,9 +263,9 @@ Adaptive forgetting modulates the decay rate based on semantic proximity to rece
 
 ### Self-Organizing Memories
 
-During consolidation, the system does two passes of housekeeping beyond decay and promotion. First, any memory missing a short description gets one auto-generated from its content, which makes it easier to surface in summaries and the knowledge graph. Second, the consolidator scans for semantically related memories that aren't yet linked and generates cross-links between them, so spreading activation has more edges to traverse the next time a query comes in. The graph densifies passively as the store grows.
+During consolidation, the system does two passes of housekeeping beyond decay and promotion. First, any memory missing a short description gets one auto-generated from its content, which makes it easier to find in summaries and the knowledge graph. Second, the consolidator scans for semantically related memories that aren't yet linked and generates cross-links between them, so spreading activation has more edges to traverse the next time a query comes in. The graph densifies passively as the store grows.
 
-### Duplicate Detection and Merging
+### Duplicate detection and merging
 
 New memories get checked against existing ones using Jaccard similarity on word sets (threshold 0.75). If a duplicate is found, it doesn't get stored.
 
@@ -269,11 +275,11 @@ During consolidation, the system also scans for near-duplicates using cosine sim
 
 Context compaction is irreversible, and if the window fills completely before compaction runs the user has to abandon the chat. Nomad Memory treats this as a first-class failure mode and ships three tools that mechanize the fix:
 
-- `engram-handoff-write` persists a structured "where we left off" snapshot to `handoffs/YYYY-MM-DD_HH-MM-SS.{json,md}` — currentTask, completed, nextSteps, openQuestions, file references, decisions, and free-form notes. The JSON half is for programmatic resume; the markdown half is for humans.
+- `engram-handoff-write` persists a structured "where we left off" snapshot to `handoffs/YYYY-MM-DD_HH-MM-SS.{json,md}`: currentTask, completed, nextSteps, openQuestions, file references, decisions, and free-form notes. The JSON half is for programmatic resume; the markdown half is for humans.
 - `engram-handoff-read` loads the latest handoff (or a specific one by stamp). Agents call it at session start to pick up from exactly where the previous session stopped.
-- `engram-context-pressure` is a self-nudge: the agent reports its own pressure level (`ok`/`warm`/`hot`/`critical`) and gets back a deterministic action plan — when to save, when to write the handoff, when to compact early rather than riding the window to the edge. Passing `phaseBoundary=true` (task complete, pivoting focus, finishing a subsystem) overrides level and forces a proactive compact; the reasoning is that pivots thrash Anthropic's 5-minute prompt cache anyway, so eating that miss at the boundary is effectively free and avoids carrying the verbose tool output of the finished phase into the next one.
+- `engram-context-pressure` is a self-nudge: the agent reports its own pressure level (`ok`/`warm`/`hot`/`critical`) and gets back a deterministic action plan: when to save, when to write the handoff, and when to compact early. Passing `phaseBoundary=true` (task complete, pivoting focus, finishing a subsystem) overrides level and forces a proactive compact; the reasoning is that pivots thrash Anthropic's 5-minute prompt cache anyway, so eating that miss at the boundary is effectively free and avoids carrying the verbose tool output of the finished phase into the next one.
 
-The bundled `engram_precompact_hook.sh` runs autonomously before compaction: it approves immediately if a fresh handoff from the same lane (written within the last 5 minutes) already exists; otherwise it auto-generates a mechanical handoff from the transcript (recent user messages, edited files, tool calls, commits) and approves. `/compact` "just works" — no two-step ritual.
+The bundled `engram_precompact_hook.sh` runs autonomously before compaction: it approves immediately if a fresh handoff from the same lane (written within the last 5 minutes) already exists; otherwise it auto-generates a mechanical handoff from the transcript (recent user messages, edited files, tool calls, commits) and approves. `/compact` then needs no second step.
 
 #### Lanes and handoffs between sessions
 
@@ -317,7 +323,7 @@ Wire them in `~/.claude/settings.json` (or your project's `.claude/settings.json
 }
 ```
 
-Use the absolute path to the hook script — Claude Code does not resolve relative paths from your project root. On Windows, the hooks require WSL or Git Bash on PATH (they're bash scripts); native PowerShell is not supported.
+Use the absolute path to the hook script, because Claude Code does not resolve relative paths from your project root. On Windows, the hooks require WSL or Git Bash on PATH (they're bash scripts); native PowerShell is not supported.
 
 The hooks are optional. The MCP tools work without them. The hooks just make the handoff lifeline reliable across `/compact` and session end without requiring you to remember to call `memory-handoff-write` manually.
 
@@ -337,7 +343,7 @@ If your tool can connect to an MCP server over stdio, Nomad Memory will work wit
 
 ## Installation
 
-> **Heads up — `@onenomad/nomad-memory` publishes at v1.0.** The package isn't on npm yet. Until v1.0 lands, install from source (see [Source](#source) below). The `npx @onenomad/nomad-memory` commands shown in this section will work after the v1.0 publish; nothing else changes about the install steps.
+> **`@onenomad/nomad-memory` publishes at v1.0.** The package isn't on npm yet. Until v1.0 lands, install from source (see [Source](#source) below). The `npx @onenomad/nomad-memory` commands shown in this section will work after the v1.0 publish; nothing else changes about the install steps.
 
 ### Claude Code
 
@@ -410,7 +416,7 @@ Then point your MCP client at `dist/server.js`:
 | `NOMAD_MEMORY_LLM_API_KEY` | (none) | Key for that endpoint. `OPENROUTER_API_KEY` also works. With neither a key nor a custom endpoint, the system uses heuristic extraction and keyword/vector search only. |
 | `MEM0_API_KEY` | (none) | Enables Mem0 cloud extraction as a second opinion |
 | `NOMAD_MEMORY_DATA_DIR` | `~/.claude/nomad-memory` | Where data gets stored (legacy `PRZM_MEMORY_DATA_DIR` and `ENGRAM_DATA_DIR` also honored; an existing `~/.claude/przm-memory` is kept when there is no new directory). |
-| `NOMAD_MEMORY_EMBEDDING_MODEL` | `Xenova/bge-small-en-v1.5` | HuggingFace model for embeddings (legacy `ENGRAM_EMBEDDING_MODEL` also honored). After changing it, run `nomad-memory-mcp reembed` — stored vectors stay in the old model's space until re-embedded, and the server warns at boot when they mismatch. |
+| `NOMAD_MEMORY_EMBEDDING_MODEL` | `Xenova/bge-small-en-v1.5` | HuggingFace model for embeddings (legacy `ENGRAM_EMBEDDING_MODEL` also honored). After changing it, run `nomad-memory-mcp reembed`; stored vectors stay in the old model's space until re-embedded, and the server warns at boot when they mismatch. |
 | `NOMAD_MEMORY_ENABLE_CROSS_ENCODER_RERANK` | `0` | Set `1` to rerank the top 30 results with a local cross-encoder (`NOMAD_MEMORY_RERANK_MODEL`, default `Xenova/ms-marco-MiniLM-L-6-v2`, downloaded on first use). About 3 points better ranking on short memories for about 150 ms a search. |
 | `NOMAD_MEMORY_AUTO_MAINTAIN` | `1` | Set `0` to disable the automatic consolidation pass (runs ~20s after boot when the last run is older than the interval). One pass runs at a time across every session sharing the data directory (`maintenance.lock`). |
 | `NOMAD_MEMORY_MAINTAIN_INTERVAL_HOURS` | `24` | Minimum hours between automatic consolidation passes. |
@@ -420,8 +426,8 @@ Then point your MCP client at `dist/server.js`:
 | `NOMAD_MEMORY_MODEL_DIR` | library default | Where the embedding model is cached. Without it the library's cache inside `node_modules` is used while writable, else `~/.cache/nomad-memory/models`. The boot log prints the path in use. |
 | `STORAGE_BACKEND` | `file` | Storage backend: `file` (LanceDB + filesystem, default), `postgres` (self-hosted multi-tenant), or `cloud` (przm Cloud Pro). See below. |
 | `DATABASE_URL` | (none) | Postgres connection string. Required when `STORAGE_BACKEND=postgres`. |
-| `TENANT_ID` | (none) | Tenant identifier — every row in postgres is scoped by this. Required when `STORAGE_BACKEND=postgres`. |
-| `PYRE_API_URL` | (none) | przm server URL for `nomad-memory login`. Alternative to the positional arg or `--server` flag — one of the three is required. |
+| `TENANT_ID` | (none) | Tenant identifier; every row in postgres is scoped by it. Required when `STORAGE_BACKEND=postgres`. |
+| `PYRE_API_URL` | (none) | przm server URL for `nomad-memory login`. Alternative to the positional arg or `--server` flag; one of the three is required. |
 | `PYRE_API_KEY` | (none) | przm Cloud API key. Overrides the field from `~/.pyre/credentials.json` when set. |
 | `PYRE_CREDENTIALS_FILE` | `~/.pyre/credentials.json` | Override the credentials-file path (CI / headless installs). |
 | `ENGRAM_NO_AUTO_CLOUD` | (unset) | Truthy (`1`/`true`/`yes`/`on`) suppresses the credentials-file probe so `~/.pyre/credentials.json` is ignored even when present. Use for benchmarks, CI, or anywhere you want to guarantee local file mode without deleting the file. Explicit `STORAGE_BACKEND` always wins. |
@@ -435,7 +441,7 @@ npm install -g @onenomad/nomad-memory
 nomad-memory login https://przm.sh
 ```
 
-`login` requires the przm server URL. The binary ships with no hardcoded default — you point at whichever przm instance you're using (prod, staging, your own deployment). Three equivalent ways to supply it:
+`login` requires the przm server URL. The binary ships with no hardcoded default: you point at whichever przm instance you're using (prod, staging, your own deployment). Three equivalent ways to supply it:
 
 ```bash
 nomad-memory login https://przm.sh          # positional argument
@@ -443,7 +449,7 @@ nomad-memory login --server https://przm.sh # flag
 PYRE_API_URL=https://przm.sh nomad-memory login   # env var
 ```
 
-`login` opens that URL in your browser, shows you a one-time pairing code, and waits for you to approve the device. On approval it writes `~/.pyre/credentials.json` (mode 0600) using the canonical `api_url` from the server's response — which may differ from the login URL you typed if the server normalises or redirects. From that point on Nomad Memory automatically routes through your cloud instance. Local data stays local; nothing changes for users who don't run `login`.
+`login` opens that URL in your browser, shows you a one-time pairing code, and waits for you to approve the device. On approval it writes `~/.pyre/credentials.json` (mode 0600) using the canonical `api_url` from the server's response, which may differ from the login URL you typed if the server normalises or redirects. From that point on Nomad Memory automatically routes through your cloud instance. Local data stays local; nothing changes for users who don't run `login`.
 
 ```
 $ nomad-memory login https://przm.sh
@@ -462,7 +468,7 @@ To sign out:
 nomad-memory logout
 ```
 
-This deletes `~/.pyre/credentials.json` and reverts to local file mode on the next run. Idempotent — running it when you're already logged out exits 0.
+This deletes `~/.pyre/credentials.json` and reverts to local file mode on the next run. It's idempotent: running it when you're already logged out exits 0.
 
 **Where credentials live**
 
@@ -478,15 +484,15 @@ export PYRE_API_URL=https://przm.sh
 export PYRE_API_KEY=sk_pyre_xxx
 ```
 
-When `STORAGE_BACKEND` is unset, Nomad Memory probes for `~/.pyre/credentials.json` and uses cloud mode if it finds one. Explicit env vars always win. The routing decision is logged to stderr on startup (`nomad-memory: storage=cloud (auto-routed via ~/.pyre/credentials.json) · apiUrl=…`) so it's never silent — if you see a benchmark or local script hitting the wire when you expected local mode, that log line is the first place to look.
+When `STORAGE_BACKEND` is unset, Nomad Memory probes for `~/.pyre/credentials.json` and uses cloud mode if it finds one. Explicit env vars always win. The routing decision is logged to stderr on startup (`nomad-memory: storage=cloud (auto-routed via ~/.pyre/credentials.json) · apiUrl=…`) so it's never silent. If you see a benchmark or local script hitting the wire when you expected local mode, that log line is the first place to look.
 
 To force local file mode without deleting your credentials file (benchmarks, CI, local-only test runs against a real login), set `ENGRAM_NO_AUTO_CLOUD=1`. The probe is skipped, the credentials file is left alone, and the routing log line names the opt-out so it's visible to whoever inherits the environment.
 
-The existing `STORAGE_BACKEND=postgres` self-host path (below) is unaffected — none of this changes anything for users running their own postgres instance.
+The existing `STORAGE_BACKEND=postgres` self-host path (below) is unaffected: none of this changes anything for users running their own postgres instance.
 
 ### Cloud / multi-tenant mode
 
-By default Nomad Memory stores everything locally under `ENGRAM_DATA_DIR` (LanceDB tables for chunks/daily_logs/rules/knowledge_triples, plus markdown files for diary and handoffs). For a single user on a single machine this is the right answer — fast, offline, zero dependencies.
+By default Nomad Memory stores everything locally under `ENGRAM_DATA_DIR` (LanceDB tables for chunks/daily_logs/rules/knowledge_triples, plus markdown files for diary and handoffs). For a single user on a single machine this is the right answer: fast, offline, zero dependencies.
 
 For shared/cloud deployments where many users share one process, it also speaks postgres with [pgvector](https://github.com/pgvector/pgvector).
 
@@ -511,7 +517,7 @@ For shared/cloud deployments where many users share one process, it also speaks 
    DATABASE_URL=postgres://... npx engram-migrate
    ```
 
-   This creates the six tables (`chunks`, `daily_logs`, `rules`, `knowledge_triples`, `diary_entries`, `handoffs`), enables the `vector` extension, and adds the hot-path indexes (per-tenant created_at, ivfflat on chunks.embedding, etc.). The runner is idempotent — re-running is a no-op for already-applied files.
+   This creates the six tables (`chunks`, `daily_logs`, `rules`, `knowledge_triples`, `diary_entries`, `handoffs`), enables the `vector` extension, and adds the hot-path indexes (per-tenant created_at, ivfflat on chunks.embedding, etc.). The runner is idempotent: re-running is a no-op for already-applied files.
 
 5. Boot Nomad Memory normally. Every query is scoped by `TENANT_ID`; switching tenants is just a different env var on a different process.
 
@@ -519,12 +525,12 @@ For shared/cloud deployments where many users share one process, it also speaks 
 
 - pgvector required (`CREATE EXTENSION vector;`). The migration runs this for you when your DB role has the privileges; otherwise create it manually first.
 - Embedding dimension is 384 by default (matches the local `Xenova/bge-small-en-v1.5` model). If you change `NOMAD_MEMORY_EMBEDDING_MODEL` to one with a different dimensionality, edit `migrations/postgres/001_init.sql` before running migrations.
-- Local file mode and postgres mode are **not** wire-compatible — there's no auto-import. If you're migrating an existing local install to the cloud, re-ingest is the path. Diary and handoffs in particular store different on-disk formats (markdown files vs. jsonb rows).
+- Local file mode and postgres mode are **not** wire-compatible, and there's no auto-import. If you're migrating an existing local install to the cloud, re-ingest is the path. Diary and handoffs in particular store different on-disk formats (markdown files vs. jsonb rows).
 - Single user, single machine: stay on `file`. The postgres path exists for the hosted przm deployment and similar shared infra.
 
 ## Tools
 
-The MCP server exposes 31 tools across six groups. Several earlier tools (`engram-format`, `engram-check-duplicate`, `engram-extract-rules`, `engram-taxonomy`, `engram-kg-stats`) were folded into their parent tools in 1.0.0-beta.6 — pass the relevant flag or mode to the parent instead. 1.0.0-beta.8 added the Handoff tools for cross-session continuity. 1.0.0 adds the memory origin field (user vs derived), the scratch tier, and `memory-scratch-promote`.
+The MCP server exposes 31 tools across six groups. Several earlier tools (`engram-format`, `engram-check-duplicate`, `engram-extract-rules`, `engram-taxonomy`, `engram-kg-stats`) were folded into their parent tools in 1.0.0-beta.6; pass the relevant flag or mode to the parent instead. 1.0.0-beta.8 added the Handoff tools for cross-session continuity. 1.0.0 adds the memory origin field (user vs derived), the scratch tier, and `memory-scratch-promote`.
 
 > **Backward compatibility:** tools were renamed from `engram-*` to `memory-*` in v1.0.0-beta.7. As of 1.3.0 the `engram-*` aliases are opt-in: set `NOMAD_MEMORY_LEGACY_ALIASES=1` to register them. They double the tool surface every MCP client pays for, so leave them off unless an old config still calls `engram-*` names. They will be removed in v2.
 
@@ -562,18 +568,18 @@ The MCP server exposes 31 tools across six groups. Several earlier tools (`engra
 
 | Tool | What it does |
 |------|-------------|
-| `memory-handoff-write` | Structured "where we left off" snapshot — currentTask, completed, nextSteps, openQuestions, fileRefs, decisions, notes. Written before compaction or session end so a fresh session can resume without re-explanation. Tagged with the session's lane and project; pass `to` to send it to another lane's inbox instead. |
+| `memory-handoff-write` | Structured "where we left off" snapshot: currentTask, completed, nextSteps, openQuestions, fileRefs, decisions, notes. Written before compaction or session end so a fresh session can resume without re-explanation. Tagged with the session's lane and project; pass `to` to send it to another lane's inbox instead. |
 | `memory-handoff-read` | Load the latest handoff from the session's lane, same project first (or one by name or stamp; `lane` or `all` to look outside the lane). Call at session start to pick up where the prior session left off. |
 | `memory-handoff-list` | Recent handoffs in the lane, newest first, with stamp, reason, name and any `to`. |
 | `memory-handoff-inbox` | Handoffs other sessions addressed to this lane that nobody has picked up. |
 | `memory-handoff-ack` | Mark a handoff addressed to this lane picked up. |
-| `memory-context-pressure` | Self-assess context window pressure (`ok`/`warm`/`hot`/`critical`) and receive a deterministic action plan — when to save memories, when to write a handoff, when to invoke `/compact`. Pass `phaseBoundary=true` at natural task/phase boundaries to force a proactive compact regardless of level (pivots thrash the cache anyway — compacting at the boundary is a free lunch). |
+| `memory-context-pressure` | Self-assess context window pressure (`ok`/`warm`/`hot`/`critical`) and receive a deterministic action plan: when to save memories, when to write a handoff, when to invoke `/compact`. Pass `phaseBoundary=true` at natural task/phase boundaries to force a proactive compact regardless of level (a pivot invalidates the cache anyway, so compacting at the boundary costs nothing extra). |
 
 ### Governance
 
 | Tool | What it does |
 |------|-------------|
-| `memory-govern` | Run governance checks: contradiction detection (vector + heuristic + LLM), semantic drift monitoring, and memory poisoning detection. All advisory — flags issues without auto-deleting. |
+| `memory-govern` | Run governance checks: contradiction detection (vector + heuristic + LLM), semantic drift monitoring, and memory poisoning detection. All advisory: it flags issues without auto-deleting. |
 
 ### Import
 
@@ -583,20 +589,20 @@ The MCP server exposes 31 tools across six groups. Several earlier tools (`engra
 
 ## Slash Commands
 
-These work in any MCP-compatible client (Claude Code, Cursor, etc.). `/onboard` is a real MCP prompt the server registers, so it shows up as a slash command automatically with no install. The rest are advertised in the MCP server instructions and are also shipped as `.claude/commands` files (see below) for clients that discover commands from the filesystem.
+These work in any MCP-compatible client (Claude Code, Cursor, etc.). `/onboard` is an MCP prompt the server registers, so it shows up as a slash command automatically with no install. The rest are advertised in the MCP server instructions and are also shipped as `.claude/commands` files (see below) for clients that discover commands from the filesystem.
 
 | Command | What it does |
 |---------|-------------|
-| `/onboard` | **Fresh-install setup.** Interviews you for your durable rules and preferences (identity/attribution, emails, communication style, code + workflow conventions, hard rules, project scoping) and stores each as a procedural memory that persists and auto-loads every session — syncing into tone too when przm-voice is connected. Built in as an MCP prompt, so it needs no install and appears automatically once the server is connected. Re-run anytime to add more. |
+| `/onboard` | **Fresh-install setup.** Interviews you for your durable rules and preferences (identity/attribution, emails, communication style, code + workflow conventions, hard rules, project scoping) and stores each as a procedural memory that persists and auto-loads every session, syncing into tone too when przm-voice is connected. Built in as an MCP prompt, so it needs no install and appears automatically once the server is connected. Re-run anytime to add more. |
 | `/memory-source <engram\|off\|hybrid>` | Switch memory backend. "engram" uses Nomad Memory exclusively, "off" disables all persistent memory, "hybrid" runs Nomad Memory alongside native client memory. |
 | `/recall <query>` | Search memories using the full hybrid pipeline (vector + keyword + temporal + KG + spreading activation). Results presented conversationally. |
 | `/forget <what>` | Find and remove or correct specific memories. Shows matches and confirms before acting. |
 | `/memory-health [maintain]` | Show memory system stats (tiers, layers, rules, KG size). With "maintain", runs the full consolidation cycle. |
-| `/memory-api <key>` | Set or update the OpenRouter API key that unlocks LLM extraction, reranking, and procedural-rule learning. |
+| `/memory-api <key>` | Set or update the OpenRouter API key that turns on LLM extraction, reranking, and procedural-rule learning. |
 | `/knowledge <subcommand>` | Knowledge graph operations. Subcommands: `timeline <entity>`, `about <entity>`, `add <s> <p> <o>`, `correct <s> <p>`, `stats`. |
 | `/memory <subcommand>` | Quick ops. Subcommands: `save <content>`, `diary [date]`, `diary write <entry>`, `import <source>`, `rules`, `session [show\|clear]`. |
 
-### Installing Slash Commands for Claude Code
+### Installing slash commands for Claude Code
 
 The slash commands above are advertised in the MCP server instructions and work automatically in most clients. For Claude Code specifically, you can also install them as custom commands so they show up in the `/` command menu:
 
@@ -712,7 +718,7 @@ npm run bench
 npm run bench:verbose
 ```
 
-Runtime: ~30 sec. Self-contained — runs on a clean clone with no flags.
+Runtime: ~30 sec. Self-contained: it runs on a clean clone with no flags.
 
 ### Ingest throughput
 
@@ -723,11 +729,11 @@ npm run bench:throughput
 npm run bench:throughput -- --chunks 5000 --mode warm
 ```
 
-Runtime: ~1–3 min at default settings.
+Runtime: about 1 to 3 min at default settings.
 
 ### Query latency
 
-Loads N synthetic chunks (default 10,000), runs M queries (default 1,000) sequentially, and reports p50 / p95 / p99 latency per query bucket (`short` keyword queries, `medium` single-sentence questions, `long` multi-clause questions). Wall-clock is measured around the full `search()` call — the same path `engram-search` hits at the MCP boundary.
+Loads N synthetic chunks (default 10,000), runs M queries (default 1,000) sequentially, and reports p50 / p95 / p99 latency per query bucket (`short` keyword queries, `medium` single-sentence questions, `long` multi-clause questions). Wall-clock is measured around the full `search()` call, the same path `engram-search` hits at the MCP boundary.
 
 ```bash
 npm run bench:latency
@@ -735,7 +741,7 @@ npm run bench:latency -- --chunks 5000 --queries 500
 npm run bench:latency -- --topk 5
 ```
 
-Runtime: ~2–4 min at default settings.
+Runtime: about 2 to 4 min at default settings.
 
 ## Security
 
@@ -752,7 +758,7 @@ No telemetry. No analytics. No phoning home.
 
 ### Secrets
 
-Every ingest passes through a redaction step before anything is embedded or stored. Credential shapes (provider API keys, GitHub, AWS, Slack, Google and Stripe tokens, JWTs, bearer tokens, private key blocks, `password=`-style assignments and passwords in connection strings) become `[REDACTED]`. Identifiers and placeholders such as `apiKey: string` or `password="your_password"` are left alone, so memories about code stay intact. Extraction drops a candidate memory outright when it would have held a secret. Set `NOMAD_MEMORY_REDACT_SECRETS=0` to store raw text.
+Every ingest passes through a redaction step before anything is embedded or stored. Credential shapes (provider API keys, GitHub, AWS, Slack, Google and Stripe tokens, JWTs, bearer tokens, private key blocks, `password=`-style assignments and passwords in connection strings) become `[REDACTED]`. Identifiers and placeholders such as `apiKey: string` or `password="your_password"` are left alone, so memories about code stay intact. Extraction drops a candidate memory when it would have held a secret. Set `NOMAD_MEMORY_REDACT_SECRETS=0` to store raw text.
 
 ### Local storage
 
@@ -768,7 +774,7 @@ Here are some real situations where this makes a difference.
 
 **Customer support agents.** A support bot that actually remembers a customer's history, past issues, and preferences without needing to query a CRM every time. The knowledge graph handles entity relationships ("Customer X uses Plan Y, started in March") and temporal queries let the agent reason about timelines.
 
-**Research and note-taking.** If you use an AI to research topics over multiple sessions, Nomad Memory lets it build on previous findings instead of starting from scratch. The diary system logs what happened each session, and the search pipeline surfaces relevant prior research when you come back to a topic.
+**Research and note-taking.** If you use an AI to research topics over multiple sessions, Nomad Memory lets it build on previous findings instead of starting from scratch. The diary system logs what happened each session, and search brings back relevant prior research when you come back to a topic.
 
 **Multi-agent systems.** Multiple agents can share the same memory store. One agent handles research, another handles coding, and they both read from and write to the same LanceDB. The MCP protocol makes this straightforward since any MCP-compatible client can connect to the server.
 
@@ -780,19 +786,19 @@ If Nomad Memory is the brain, [przm Voice](https://github.com/OneNomad-LLC/przm-
 
 Nomad Memory handles *what* the agent remembers: facts, preferences, rules, timelines. przm Voice handles *how* the agent communicates: tone, verbosity, format preferences, and communication style. They solve different problems but work best together.
 
-Here's why the combo matters. Nomad Memory will learn that you prefer TypeScript over Python. przm Voice will learn that you want short answers with code first and explanation after. Nomad Memory will store the fact that you got laid off last month. przm Voice will know not to bring that up casually based on the emotional context it picked up.
+Nomad Memory will learn that you prefer TypeScript over Python. przm Voice will learn that you want short answers with code first and explanation after. Nomad Memory will store the fact that you got laid off last month. przm Voice will know not to bring that up casually based on the emotional context it picked up.
 
-przm Voice tracks behavioral signals (corrections, approvals, frustrations, praise) and builds a communication profile that adapts over time. The procedural rules surface here overlaps a little ("never use em-dashes"), but Voice goes deeper into *how* the agent should talk to you specifically. Things like matching your energy level, knowing when to be terse vs. when to elaborate, and adjusting formality based on the topic.
+przm Voice tracks behavioral signals (corrections, approvals, frustrations, praise) and builds a communication profile that adapts over time. The procedural rules here overlap a little ("never use em-dashes"), but Voice goes deeper into *how* the agent should talk to you specifically. Things like matching your energy level, knowing when to be terse vs. when to elaborate, and adjusting formality based on the topic.
 
 When both servers are running, they coordinate through three mechanisms:
 
-1. **Emotion-weighted memory importance.** Memory calls `persona_state` during ingestion to get the current emotional valence and arousal. High-arousal negative emotions boost memory importance by up to 30%. A frustrated correction gets remembered more strongly than a neutral fact.
+1. Memory calls `persona_state` during ingestion to get the current emotional valence and arousal. High-arousal negative emotions boost memory importance by up to 30%. A frustrated correction gets remembered more strongly than a neutral fact.
 
-2. **Cognitive-load-gated search.** When Voice detects cognitive overload, Memory's `engram-search` receives the load signal and returns only the top 3 high-importance memories instead of the full result set. Less noise when you're already overwhelmed.
+2. When Voice detects cognitive overload, Memory's `engram-search` receives the load signal and returns only the top 3 high-importance memories instead of the full result set. Less noise when you're already overwhelmed.
 
-3. **Procedural bridge.** Memory's learned rules (from corrections and instructions) and Voice's applied evolution proposals sync through a shared bridge file at `~/.claude/procedural-bridge.json`. Voice's applied proposals reinforce or create Memory rules. Memory rules become Voice proposals with semantic conflict detection against existing soul files — catches antonym pairs and value contradictions, not just exact duplicates. The bridge auto-syncs during `persona_consolidate`, and bridge health is visible via `persona_stats`.
+3. Memory's learned rules (from corrections and instructions) and Voice's applied evolution proposals sync through a shared bridge file at `~/.claude/procedural-bridge.json`. Voice's applied proposals reinforce or create Memory rules. Memory rules become Voice proposals with semantic conflict detection against existing soul files, which catches antonym pairs and value contradictions as well as exact duplicates. The bridge auto-syncs during `persona_consolidate`, and bridge health is visible via `persona_stats`.
 
-You can run Memory without Voice and it works fine. But if you want an AI that actually feels like it knows you, not just what you've told it, but how you like to be talked to, run both.
+You can run Memory without Voice and it works fine. Run both if you want an agent that knows how you like to be talked to as well as what you've told it.
 
 ## License
 

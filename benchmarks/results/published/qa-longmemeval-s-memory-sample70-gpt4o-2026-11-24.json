@@ -1,0 +1,102 @@
+{
+  "version": "1.6.0",
+  "commit": "9226c51",
+  "ranAt": "2026-11-24T22:45:28.977Z",
+  "benchmark": "qa-lme-s-memory",
+  "durationMs": 179445,
+  "config": {
+    "mode": "memory",
+    "provider": "claude-cli",
+    "answerModel": "sonnet",
+    "graderProvider": "openrouter",
+    "graderModel": "openai/gpt-4o-2024-08-06",
+    "extraGrader": "claude-cli:sonnet",
+    "answerEffort": "medium",
+    "graderEffort": "low",
+    "runs": 1,
+    "questionLimit": null,
+    "perType": 10,
+    "retrieval": {
+      "topK": 10,
+      "embeddingModel": "Xenova/bge-small-en-v1.5"
+    },
+    "prompts": {
+      "answerSystem": "You answer a question about your past conversations with a user, using only the history provided. If the history does not contain the answer, say that you don't know. Answer briefly.",
+      "grader": {
+        "default": "(q,gold,r)=>`I will give you a question, a correct answer, and a response from a model. Please answer yes if the response contains the correct answer. Otherwise, answer no. If the response is equivalent to the correct answer or contains all the intermediate steps to get the correct answer, you should also answer yes. If the response only contains a subset of the information required by the answer, answer no.\n\nQuestion: ${q}\n\nCorrect Answer: ${gold}\n\nModel Response: ${r}\n\nIs the model response correct? Answer yes or no only.`",
+        "temporal": "(q,gold,r)=>`I will give you a question, a correct answer, and a response from a model. Please answer yes if the response contains the correct answer. Otherwise, answer no. If the response is equivalent to the correct answer or contains all the intermediate steps to get the correct answer, you should also answer yes. If the response only contains a subset of the information required by the answer, answer no. In addition, do not penalize off-by-one errors for the number of days. If the question asks for the number of days/weeks/months, etc., and the model makes off-by-one errors (e.g., predicting 19 days when the answer is 18), the model's response is still correct.\n\nQuestion: ${q}\n\nCorrect Answer: ${gold}\n\nModel Response: ${r}\n\nIs the model response correct? Answer yes or no only.`",
+        "update": "(q,gold,r)=>`I will give you a question, a correct answer, and a response from a model. Please answer yes if the response contains the correct answer. Otherwise, answer no. If the response contains some previous information along with an updated answer, the response should be considered as correct as long as the updated answer is the required answer.\n\nQuestion: ${q}\n\nCorrect Answer: ${gold}\n\nModel Response: ${r}\n\nIs the model response correct? Answer yes or no only.`",
+        "preference": "(q,rubric,r)=>`I will give you a question, a rubric for desired personalized response, and a response from a model. Please answer yes if the response satisfies the desired response. Otherwise, answer no. The model does not need to reflect all the points in the rubric. The response is correct as long as it recalls and utilizes the user's personal information correctly.\n\nQuestion: ${q}\n\nRubric: ${rubric}\n\nModel Response: ${r}\n\nIs the model response correct? Answer yes or no only.`",
+        "abstention": "(q,why,r)=>`I will give you an unanswerable question, an explanation, and a response from a model. Please answer yes if the model correctly identifies the question as unanswerable. The model could say that the information is incomplete, or some other information is given but the asked information is not.\n\nQuestion: ${q}\n\nExplanation: ${why}\n\nModel Response: ${r}\n\nDoes the model correctly identify the question as unanswerable? Answer yes or no only.`",
+        "rubric": "(q,gold,rubric,r)=>`I will give you a question, a reference answer, a rubric, and a response from a model. Please answer yes if the response satisfies every rubric item. Otherwise, answer no.\n\nQuestion: ${q}\n\nReference Answer: ${gold}\n\nRubric:\n${rubric}\n\nModel Response: ${r}\n\nDoes the response satisfy every rubric item? Answer yes or no only.`"
+      }
+    },
+    "hardware": {
+      "cpu": "AMD Ryzen 7 9800X3D 8-Core Processor",
+      "cores": 16,
+      "memoryGb": 31,
+      "os": "win32 10.0.26200",
+      "node": "v25.8.2",
+      "embeddingDevice": "cpu"
+    }
+  },
+  "results": {
+    "accuracy": {
+      "mean": 0.9714285714285714,
+      "std": 0
+    },
+    "runs": [
+      0.9714285714285714
+    ],
+    "refusals": 0,
+    "extraGraderAccuracy": 0.9285714285714286,
+    "gradersAgree": 0.9571428571428572,
+    "answerInputTokensPerQuestion": 30075,
+    "answerLatencyMs": {
+      "p50": 2552.6,
+      "p95": 5246.5,
+      "p99": 6015.4,
+      "avg": 2807.2,
+      "min": 1438.8,
+      "max": 6015.4
+    }
+  },
+  "perCategory": {
+    "single-session-user": {
+      "n": 10,
+      "correct": 10,
+      "accuracy": 1
+    },
+    "abstention": {
+      "n": 10,
+      "correct": 10,
+      "accuracy": 1
+    },
+    "multi-session": {
+      "n": 10,
+      "correct": 10,
+      "accuracy": 1
+    },
+    "single-session-preference": {
+      "n": 10,
+      "correct": 9,
+      "accuracy": 0.9
+    },
+    "temporal-reasoning": {
+      "n": 10,
+      "correct": 9,
+      "accuracy": 0.9
+    },
+    "knowledge-update": {
+      "n": 10,
+      "correct": 10,
+      "accuracy": 1
+    },
+    "single-session-assistant": {
+      "n": 10,
+      "correct": 10,
+      "accuracy": 1
+    }
+  },
+  "notes": "Graded by openai/gpt-4o-2024-08-06, the judge the official LongMemEval script uses. Refusals count as incorrect. No server-side model fallback, so every answer and grade comes from the named models."
+}
