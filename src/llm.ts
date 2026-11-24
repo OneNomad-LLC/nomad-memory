@@ -4,6 +4,7 @@ import { accessSync, mkdirSync, constants as fsConstants } from 'node:fs';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
 import type { SmartMemoryConfig } from './types.js';
+import { claudeCliComplete, claudeCliModel, usesClaudeCli } from './claude-cli.js';
 
 /**
  * LLM provider for the MCP server.
@@ -14,6 +15,8 @@ import type { SmartMemoryConfig } from './types.js';
  *   LM Studio, vLLM, a provider's own OpenAI-compatible API or a proxy.
  *   Default model: anthropic/claude-haiku-4.5 (fast, cheap).
  *   Override with NOMAD_MEMORY_LLM_MODEL (legacy ENGRAM_MODEL).
+ *   Or NOMAD_MEMORY_LLM_PROVIDER=claude-cli to use the Claude subscription signed in to the
+ *   Claude Code CLI on this machine (see claude-cli.ts; model defaults to haiku).
  *
  * Embeddings: Local ONNX model via @huggingface/transformers.
  *   Default model: Xenova/bge-small-en-v1.5 (384-dim, ~34 MB, cached after first use).
@@ -54,10 +57,11 @@ function getClient(): OpenAI | null {
 }
 
 export function isLlmAvailable(): boolean {
-  return resolveLlmEndpoint() !== null;
+  return usesClaudeCli() || resolveLlmEndpoint() !== null;
 }
 
 export function getLlmModelName(): string {
+  if (usesClaudeCli()) return claudeCliModel();
   return memEnv('LLM_MODEL', ['ENGRAM_MODEL', 'SMART_MEMORY_MODEL'])
     ?? 'anthropic/claude-haiku-4.5';
 }
@@ -68,12 +72,15 @@ export async function llmComplete(
   userMessage: string,
   opts?: { maxTokens?: number; temperature?: number }
 ): Promise<string> {
+  // The CLI has no max-tokens or temperature setting; its replies here are short JSON anyway.
+  if (usesClaudeCli()) return claudeCliComplete(systemPrompt, userMessage);
   const client = getClient();
   if (!client) {
     throw new Error(
       'No LLM configured for LLM-powered features (extraction, re-ranking, procedural rules). ' +
       'Set NOMAD_MEMORY_LLM_BASE_URL to any OpenAI-compatible endpoint (a local Ollama needs no key), ' +
-      'or NOMAD_MEMORY_LLM_API_KEY / OPENROUTER_API_KEY for OpenRouter.'
+      'NOMAD_MEMORY_LLM_API_KEY / OPENROUTER_API_KEY for OpenRouter, ' +
+      'or NOMAD_MEMORY_LLM_PROVIDER=claude-cli to use your Claude subscription through Claude Code.'
     );
   }
 

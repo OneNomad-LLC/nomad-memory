@@ -11,6 +11,7 @@ Lessons from a production deployment of a memory system that started from this r
 The plan, with what was left out and why, is `docs/plans/production-memory-lessons.md`.
 
 ### Added
+- **Use a Claude subscription for LLM features.** `NOMAD_MEMORY_LLM_PROVIDER=claude-cli` sends extraction, re-ranking and consolidation through the Claude Code CLI signed in on this machine (`claude -p`, model `haiku` by default), so no API key is needed. The child runs with no tools, no MCP servers and `--safe-mode`, and the hooks skip themselves when `NOMAD_MEMORY_CHILD=1`, so it can't call back into nomad-memory.
 
 - **Secrets are redacted before storing.** `memory-ingest` replaces credential shapes
   (provider API keys, GitHub, AWS, Slack, Google and Stripe tokens, JWTs, bearer tokens,

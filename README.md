@@ -39,9 +39,10 @@ nomad-memory-mcp search --query "where was I working last March?"
 | Variable | Default | What it does |
 |---|---|---|
 | `NOMAD_MEMORY_DATA_DIR` | `~/.claude/nomad-memory` | Where memories are stored |
+| `NOMAD_MEMORY_LLM_PROVIDER` | none | `claude-cli` uses your Claude subscription through the signed-in Claude Code CLI (no key; model defaults to `haiku`) |
 | `NOMAD_MEMORY_LLM_BASE_URL` | OpenRouter | Any OpenAI-compatible endpoint (a local Ollama needs no key) |
 | `NOMAD_MEMORY_LLM_API_KEY` | none | Key for that endpoint; `OPENROUTER_API_KEY` also works |
-| `NOMAD_MEMORY_LLM_MODEL` | `anthropic/claude-haiku-4.5` | Model for extraction and re-ranking |
+| `NOMAD_MEMORY_LLM_MODEL` | `anthropic/claude-haiku-4.5` | Model for extraction and re-ranking (`haiku` with `claude-cli`) |
 | `NOMAD_MEMORY_EMBEDDING_MODEL` | `Xenova/bge-small-en-v1.5` | Local embedding model |
 | `NOMAD_MEMORY_REDACT_SECRETS` | `1` | Set `0` to keep credentials in stored text |
 
@@ -53,7 +54,7 @@ Retrieval only, no model in the loop. On LongMemEval S the right sessions land i
 
 ## Privacy
 
-Everything stays on your machine unless you point it at an LLM endpoint. Secrets (API keys, tokens, private keys, passwords) are redacted before anything is stored, on by default. No telemetry.
+Everything stays on your machine unless you point it at an LLM endpoint or the Claude CLI. Secrets (API keys, tokens, private keys, passwords) are redacted before anything is stored, on by default. No telemetry.
 
 ## License
 

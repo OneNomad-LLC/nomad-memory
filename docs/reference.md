@@ -403,6 +403,7 @@ Then point your MCP client at `dist/server.js`:
 
 | Variable | Default | Description |
 |----------|---------|-------------|
+| `NOMAD_MEMORY_LLM_PROVIDER` | (none) | `claude-cli` (also `claude-subscription`) runs completions through the Claude Code CLI signed in on this machine, so they use your Claude subscription instead of an API key. It runs `claude -p` with no tools, no MCP servers and `--safe-mode` (no hooks), so it can't call back into nomad-memory. `NOMAD_MEMORY_LLM_MODEL` takes CLI names (`haiku`, the default, or `sonnet`); `NOMAD_MEMORY_CLAUDE_CLI` sets the CLI's path if `claude` isn't on PATH. |
 | `NOMAD_MEMORY_LLM_BASE_URL` | OpenRouter | Any OpenAI-compatible endpoint for LLM features: a local Ollama, LM Studio or vLLM server (no key needed), a provider's own OpenAI-compatible API, or a proxy. Legacy `ENGRAM_LLM_BASE_URL` also honored. |
 | `NOMAD_MEMORY_LLM_API_KEY` | (none) | Key for that endpoint. `OPENROUTER_API_KEY` also works. With neither a key nor a custom endpoint, the system uses heuristic extraction and keyword/vector search only. |
 | `MEM0_API_KEY` | (none) | Enables Mem0 cloud extraction as a second opinion |
@@ -742,7 +743,7 @@ This plugin contacts exactly two services:
 1. **HuggingFace Hub** for a one-time model download on first run (~34MB for the default bge-small), cached after that
 2. **Mem0 API**, only when `extractionProvider` is `mem0` or `both`
 
-If you set `NOMAD_MEMORY_LLM_API_KEY` or `OPENROUTER_API_KEY`, it contacts OpenRouter for LLM features (you pick the model provider); with `NOMAD_MEMORY_LLM_BASE_URL` it contacts that endpoint instead, which can be a model on your own machine. Without either, everything runs fully local.
+If you set `NOMAD_MEMORY_LLM_API_KEY` or `OPENROUTER_API_KEY`, it contacts OpenRouter for LLM features (you pick the model provider); with `NOMAD_MEMORY_LLM_BASE_URL` it contacts that endpoint instead, which can be a model on your own machine. With `NOMAD_MEMORY_LLM_PROVIDER=claude-cli` the Claude CLI sends the text to Anthropic under your subscription. Without any of these, everything runs fully local.
 
 No telemetry. No analytics. No phoning home.
 
