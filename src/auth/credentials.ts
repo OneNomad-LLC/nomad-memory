@@ -37,7 +37,7 @@ export function credentialsPath(path?: string): string {
 }
 
 function warn(msg: string): void {
-  process.stderr.write(`przm-memory: credentials — ${msg}\n`);
+  process.stderr.write(`nomad-memory: credentials — ${msg}\n`);
 }
 
 function isStringArray(v: unknown): v is string[] {

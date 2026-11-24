@@ -4,8 +4,8 @@
 # Must agree with laneFromConfigDir and currentLane in src/lane.ts; tests/lane.test.ts
 # runs both over the same inputs.
 
-przm_lane() {
-  local raw="${PRZM_MEMORY_LANE:-}"
+nomad_lane() {
+  local raw="${NOMAD_MEMORY_LANE:-${NOMAD_MEMORY_LANE:-}}"
   if [ -z "$(printf '%s' "$raw" | tr -d '[:space:]')" ]; then
     local dir
     dir="$(printf '%s' "${CLAUDE_CONFIG_DIR:-}" | sed -E 's/^[[:space:]]+|[[:space:]]+$//g; s#/+$##')"

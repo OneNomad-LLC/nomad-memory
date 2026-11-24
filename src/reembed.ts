@@ -16,7 +16,7 @@ import { buildContextPrefix } from './utils.js';
  *
  * A marker file (<dataDir>/embedding-meta.json) records which model the
  * corpus was last embedded with. The server checks it at boot and warns
- * loudly on mismatch; `przm-memory-mcp reembed` rewrites every stored
+ * loudly on mismatch; `nomad-memory-mcp reembed` rewrites every stored
  * vector with the current model and updates the marker.
  */
 
@@ -160,4 +160,34 @@ export async function reembedAll(
   }
 
   return stats;
+}
+
+/** Chunks a maintenance pass embeds at most; the rest wait for the next pass. */
+export const EMBED_MISSING_CAP = 500;
+
+/**
+ * Embed chunks that were stored without a vector. `embed()` returns [] when the model can't
+ * load (no network on first run, a cache it can't write), and the chunk is saved anyway; the
+ * vector stage never sees it again unless something embeds it later. Maintenance calls this so
+ * a store catches up once the model works. Never overwrites a vector; returns how many it
+ * embedded. Parents carry no vector by design and are skipped.
+ */
+export async function embedMissing(
+  config: SmartMemoryConfig,
+  storage: Storage,
+  cap = EMBED_MISSING_CAP
+): Promise<number> {
+  if (process.env.ENGRAM_SKIP_EMBED === '1') return 0;
+  const missing = (await storage.listChunks())
+    .filter(c => c.consolidationLevel !== -1 && !c.embedding)
+    .slice(0, cap);
+  const version = getEmbeddingModelProfile().version;
+  const done: StoredChunk[] = [];
+  for (const chunk of missing) {
+    const embedding = await embed(config, chunk.content, buildContextPrefix(chunk));
+    if (embedding.length === 0) break; // the model is still down; try next pass
+    done.push({ ...chunk, embedding, embeddingVersion: version });
+  }
+  if (done.length > 0) await storage.updateChunks(done);
+  return done.length;
 }

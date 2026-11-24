@@ -332,7 +332,7 @@ export class FileStorageAdapter implements StorageAdapter {
         });
       }
     } catch (err) {
-      console.error('przm-memory: chunk table optimize failed (non-fatal):', err);
+      console.error('nomad-memory: chunk table optimize failed (non-fatal):', err);
     }
   }
 

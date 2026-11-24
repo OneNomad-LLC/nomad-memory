@@ -18,7 +18,11 @@
 # (that's where the LLM-distilled facts come from). The hook's job is
 # strictly the compact-time lifeline, not session-long memory hygiene.
 
-DATA_DIR="${PRZM_MEMORY_DATA_DIR:-${ENGRAM_DATA_DIR:-${SMART_MEMORY_DATA_DIR:-$HOME/.claude/przm-memory}}}"
+DATA_DIR="${NOMAD_MEMORY_DATA_DIR:-${NOMAD_MEMORY_DATA_DIR:-${ENGRAM_DATA_DIR:-${SMART_MEMORY_DATA_DIR:-}}}}"
+if [ -z "$DATA_DIR" ]; then  # default; keep a pre-rename przm-memory store if it is the only one
+  DATA_DIR="$HOME/.claude/nomad-memory"
+  [ -d "$DATA_DIR" ] || [ ! -d "$HOME/.claude/przm-memory" ] || DATA_DIR="$HOME/.claude/przm-memory"
+fi
 WINDOW_SEC="${ENGRAM_PRECOMPACT_WINDOW_SEC:-300}"
 
 # Claude Code passes { session_id, transcript_path, cwd, trigger, ... } on stdin.
@@ -27,13 +31,13 @@ PAYLOAD=$(cat 2>/dev/null || true)
 
 # shellcheck source=lane.sh
 . "$(dirname "${BASH_SOURCE[0]}")/lane.sh" 2>/dev/null
-LANE="$(przm_lane 2>/dev/null || printf 'claude')"
+LANE="$(nomad_lane 2>/dev/null || printf 'claude')"
 
 RESULT=$(ENGRAM_DATA_DIR="$DATA_DIR" \
          ENGRAM_HANDOFF_DIR="$DATA_DIR/handoffs" \
          WINDOW_SEC="$WINDOW_SEC" \
          CC_PAYLOAD="$PAYLOAD" \
-         PRZM_LANE="$LANE" \
+         NOMAD_LANE="$LANE" \
          node -e "
   (() => {
     const fs = require('fs');
@@ -41,7 +45,7 @@ RESULT=$(ENGRAM_DATA_DIR="$DATA_DIR" \
 
     const handoffDir = process.env.ENGRAM_HANDOFF_DIR;
     const windowMs = Number(process.env.WINDOW_SEC) * 1000;
-    const lane = process.env.PRZM_LANE || 'claude';
+    const lane = process.env.NOMAD_LANE || 'claude';
     const stampRe = /^\d{4}-\d{2}-\d{2}_\d{2}-\d{2}-\d{2}(-\d+Z?)?(-\d+)?\.json$/;
 
     let payload = {};

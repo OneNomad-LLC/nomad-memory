@@ -40,7 +40,7 @@ function toolResult(toolUseId: string, payload: unknown): string {
   return JSON.stringify({ type: 'user', message: { content: [{ type: 'tool_result', tool_use_id: toolUseId, content: [{ type: 'text', text }] }] } });
 }
 function searchCall(id: string, query: string) {
-  return { type: 'tool_use', id, name: 'mcp__przm-memory__memory-search', input: { query } };
+  return { type: 'tool_use', id, name: 'mcp__nomad-memory__memory-search', input: { query } };
 }
 function results(chunks: Array<{ id: string; content: string }>) {
   return { total: chunks.length, selected: chunks.length, results: chunks.map(c => ({ ...c, type: 'fact' })) };
@@ -104,7 +104,7 @@ describe('parseTranscript', () => {
     const lines = [
       assistant([searchCall('tu-3', 'x')]),
       toolResult('tu-3', results([PATH_CHUNK])),
-      assistant([{ type: 'tool_use', id: 'i1', name: 'mcp__przm-memory__memory-ingest', input: { content: PATH_CHUNK.content } }]),
+      assistant([{ type: 'tool_use', id: 'i1', name: 'mcp__nomad-memory__memory-ingest', input: { content: PATH_CHUNK.content } }]),
       assistant([{ type: 'text', text: 'ok' }]),
       assistant([{ type: 'text', text: 'ok' }]),
       assistant([{ type: 'text', text: 'ok' }]),

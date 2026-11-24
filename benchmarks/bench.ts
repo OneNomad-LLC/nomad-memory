@@ -23,6 +23,7 @@ import { tmpdir } from 'node:os';
 import { Storage } from '../src/storage.js';
 import { loadConfig } from '../src/config.js';
 import { search } from '../src/search.js';
+import { isLlmAvailable } from '../src/llm.js';
 import { ingest } from '../src/wal.js';
 import { consolidate } from '../src/consolidator.js';
 import { addTriple, replaceTriple, queryGraph } from '../src/knowledge-graph.js';
@@ -335,7 +336,7 @@ async function runBenchmark(verbose: boolean, emitJson: boolean): Promise<void> 
   console.log(`  Negative resistance  ${totalNegPass}/${results.length} passed`);
   console.log(`  Memories seeded      ${chunkCount}`);
   console.log(`  Embedding model      ${process.env.SMART_MEMORY_EMBEDDING_MODEL ?? 'Xenova/all-MiniLM-L6-v2'}`);
-  console.log(`  LLM available        ${!!process.env.OPENROUTER_API_KEY}`);
+  console.log(`  LLM available        ${isLlmAvailable()}`);
   console.log();
 
   // ── Knowledge Graph Test ────────────────────────────────────────
@@ -370,7 +371,7 @@ async function runBenchmark(verbose: boolean, emitJson: boolean): Promise<void> 
       durationMs: Math.round(performance.now() - benchStart),
       config: {
         embeddingModel: process.env.SMART_MEMORY_EMBEDDING_MODEL ?? 'Xenova/all-MiniLM-L6-v2',
-        llmAvailable: !!process.env.OPENROUTER_API_KEY,
+        llmAvailable: isLlmAvailable(),
         memoriesSeeded: chunkCount,
         testCases: TEST_CASES.length,
       },

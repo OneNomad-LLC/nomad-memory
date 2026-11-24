@@ -94,7 +94,7 @@ export class CloudStorageAdapter implements StorageAdapter {
     const res = await this.request(method, path, body);
     if (!res.ok) {
       const msg = await errorBody(res);
-      throw new Error(`przm Memory cloud ${method} ${path} ${res.status}: ${msg}`);
+      throw new Error(`Nomad Memory cloud ${method} ${path} ${res.status}: ${msg}`);
     }
     return res;
   }
@@ -109,16 +109,16 @@ export class CloudStorageAdapter implements StorageAdapter {
   async ensureReady(): Promise<void> {
     // Lightweight identity probe. Verifies credentials are live and the
     // server is reachable before any pipeline work spins up. 401 here is
-    // a clean signal to re-run `przm-memory-mcp login`.
+    // a clean signal to re-run `nomad-memory-mcp login`.
     const res = await this.request('GET', '/api/auth/whoami');
     if (!res.ok) {
       const msg = await errorBody(res);
       if (res.status === 401) {
         throw new Error(
-          `przm Memory cloud: credentials invalid or expired (${msg}). Run \`przm-memory-mcp login <url>\` again.`,
+          `Nomad Memory cloud: credentials invalid or expired (${msg}). Run \`nomad-memory-mcp login <url>\` again.`,
         );
       }
-      throw new Error(`przm Memory cloud: server check failed (${res.status}): ${msg}`);
+      throw new Error(`Nomad Memory cloud: server check failed (${res.status}): ${msg}`);
     }
   }
 
@@ -142,7 +142,7 @@ export class CloudStorageAdapter implements StorageAdapter {
     if (res.status === 404) return null;
     if (!res.ok) {
       const msg = await errorBody(res);
-      throw new Error(`przm Memory cloud GET /chunks/${id} ${res.status}: ${msg}`);
+      throw new Error(`Nomad Memory cloud GET /chunks/${id} ${res.status}: ${msg}`);
     }
     return (await res.json()) as StoredChunk;
   }
@@ -304,7 +304,7 @@ export class CloudStorageAdapter implements StorageAdapter {
     if (res.status === 404) return null;
     if (!res.ok) {
       const msg = await errorBody(res);
-      throw new Error(`przm Memory cloud GET /handoffs/${target} ${res.status}: ${msg}`);
+      throw new Error(`Nomad Memory cloud GET /handoffs/${target} ${res.status}: ${msg}`);
     }
     return (await res.json()) as HandoffNote;
   }

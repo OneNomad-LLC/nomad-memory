@@ -1,3 +1,4 @@
+import { memEnv } from './env.js';
 import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { homedir } from 'node:os';
@@ -5,14 +6,14 @@ import type { ProceduralRule } from './types.js';
 import { Storage } from './storage.js';
 
 /**
- * Procedural bridge — shared interchange between przm Memory and przm Voice.
+ * Procedural bridge — shared interchange between Nomad Memory and przm Voice.
  *
  * Both servers read/write a neutral JSON file at ~/.claude/procedural-bridge.json.
  * Neither imports code from the other. The AI client can also trigger sync
  * explicitly via tools.
  *
- * przm Memory exports its procedural rules with confidence > 0.3.
- * przm Memory imports Voice-sourced rules as new ProceduralRules with low initial confidence.
+ * Nomad Memory exports its procedural rules with confidence > 0.3.
+ * Nomad Memory imports Voice-sourced rules as new ProceduralRules with low initial confidence.
  *
  * Note: the `source` discriminator on BridgeRule still uses the legacy
  * `'engram' | 'persona'` literal so existing on-disk bridge files
@@ -45,7 +46,7 @@ export interface ProceduralInterchange {
  * load it read the real file under $HOME from inside the test suite.
  */
 function bridgePath(): string {
-  return process.env.PRZM_MEMORY_BRIDGE_PATH ?? process.env.ENGRAM_BRIDGE_PATH ?? join(homedir(), '.claude', 'procedural-bridge.json');
+  return memEnv('BRIDGE_PATH', ['ENGRAM_BRIDGE_PATH']) ?? join(homedir(), '.claude', 'procedural-bridge.json');
 }
 
 // ── File I/O ───────────────────────────────────────────────────────
@@ -69,7 +70,7 @@ export function saveBridgeFile(data: ProceduralInterchange): void {
   writeFileSync(bridgePath(), JSON.stringify(data, null, 2), 'utf-8');
 }
 
-// ── Export przm Memory Rules → Bridge ──────────────────────────────
+// ── Export Nomad Memory Rules → Bridge ──────────────────────────────
 
 export async function exportRulesToBridge(storage: Storage): Promise<number> {
   const rules = await storage.getRules();
@@ -97,7 +98,7 @@ export async function exportRulesToBridge(storage: Storage): Promise<number> {
   return engramRules.length;
 }
 
-// ── Import Voice Rules → przm Memory ───────────────────────────────
+// ── Import Voice Rules → Nomad Memory ───────────────────────────────
 
 export async function importRulesFromBridge(
   storage: Storage
@@ -111,7 +112,7 @@ export async function importRulesFromBridge(
   let conflicts = 0;
 
   for (const pr of personaRules) {
-    // Check if a matching przm Memory rule exists (word overlap)
+    // Check if a matching Nomad Memory rule exists (word overlap)
     const matchIdx = findMatchingRule(pr.rule, existing);
 
     if (matchIdx >= 0) {

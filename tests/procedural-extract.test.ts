@@ -127,7 +127,7 @@ describe('bridge import is idempotent', () => {
   it('bumps a matched rule once for a given bridge entry, not on every pass', async () => {
     const { dir, cleanup } = tmpDir();
     const bridge = join(dir, 'bridge.json');
-    process.env.PRZM_MEMORY_BRIDGE_PATH = bridge;
+    process.env.NOMAD_MEMORY_BRIDGE_PATH = bridge;
     try {
       const storage = new Storage(dir);
       await storage.ensureReady();
@@ -144,7 +144,7 @@ describe('bridge import is idempotent', () => {
       assert.equal(r.reinforcements, 1);
       assert.equal(r.confidence, 0.55);
     } finally {
-      delete process.env.PRZM_MEMORY_BRIDGE_PATH;
+      delete process.env.NOMAD_MEMORY_BRIDGE_PATH;
       cleanup();
     }
   });

@@ -1,5 +1,6 @@
 import type { SmartMemoryConfig } from './types.js';
 export declare function isLlmAvailable(): boolean;
+export declare function getLlmModelName(): string;
 export declare function llmComplete(_config: SmartMemoryConfig, systemPrompt: string, userMessage: string, opts?: {
     maxTokens?: number;
     temperature?: number;
@@ -41,6 +42,13 @@ export interface EmbeddingModelProfile {
     version: number;
 }
 export declare function getEmbeddingModelProfile(modelName?: string): EmbeddingModelProfile;
+/**
+ * Where the embedding model is cached. `NOMAD_MEMORY_MODEL_DIR` wins. Otherwise the library's
+ * default (inside node_modules) is kept while it is writable, so an existing cache keeps
+ * working; a global or npx install often can't write there, and the download then fails or
+ * stalls, so it falls back to ~/.cache/nomad-memory/models.
+ */
+export declare function resolveModelCacheDir(libraryDefault: string): string;
 /**
  * Trigger the embedding model load in the background so the user's
  * first search query doesn't pay the ~1.5–5s ONNX pipeline-construction

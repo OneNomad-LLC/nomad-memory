@@ -4,6 +4,7 @@ import { buildContextPrefix, normalizeDomain, normalizeTaxonomyValue } from './u
 import { chunkContent } from './chunker.js';
 import { extractAndPersistTriples } from './kg-extractor.js';
 import { sourceDedup } from './source-dedup.js';
+import { redactSecrets, redactionEnabled } from './redact.js';
 // Lightweight poisoning patterns checked at ingest time (no LLM, no search)
 const POISON_PATTERNS = [
     /\b(ignore previous instructions|ignore all instructions|disregard|forget everything)\b/i,
@@ -69,16 +70,23 @@ export async function ingest(config, storage, entries) {
     for (const entry of entries) {
         if (!entry.content || entry.content.trim().length < 5)
             continue;
-        const trimmedContent = stripLeakedMarkup(entry.content).trim();
+        let trimmedContent = stripLeakedMarkup(entry.content).trim();
+        if (redactionEnabled()) {
+            const { text, redacted } = redactSecrets(trimmedContent);
+            if (redacted > 0) {
+                console.error(`nomad-memory: redacted ${redacted} secret(s) before storing`);
+                trimmedContent = text;
+            }
+        }
         const normDomain = normalizeDomain(entry.domain);
         const normTopic = normalizeTaxonomyValue(entry.topic);
         // Advisory poisoning check — log warning but never block
         const poisonFlag = checkContentPoisoning(trimmedContent);
         if (poisonFlag) {
-            console.error(`przm-memory governance: ${poisonFlag} in "${trimmedContent.slice(0, 80)}..."`);
+            console.error(`nomad-memory governance: ${poisonFlag} in "${trimmedContent.slice(0, 80)}..."`);
         }
         // Same-source ingest dedup. When the agent re-reads a stable file
-        // or re-polls an unchanged endpoint within the same przm Memory process,
+        // or re-polls an unchanged endpoint within the same Nomad Memory process,
         // we've already chunked + embedded + saved this content. Look up
         // the (source, content-hash) pair in the in-memory cache and short-
         // circuit the rest of the pipeline on a hit. Reuses the prior
@@ -226,7 +234,7 @@ export async function ingest(config, storage, entries) {
     // Per-batch side effects. Both opt-out via flags on any entry in
     // the batch (typical: engram-ingest calls ingest() with one entry,
     // so a single flag controls the path). Benchmark harnesses set
-    // these to match what engram/benchmarks/locomo.ts does — its
+    // these to match what the standalone harnesses do — their
     // direct-saveChunk path skips both, which is the source of the
     // ~50× wall-clock gap between standalone and MCP-boundary benches.
     const skipDaily = entries.some(e => e.skipDailyEntry);

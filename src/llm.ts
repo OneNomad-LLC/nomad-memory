@@ -1,18 +1,24 @@
+import { memEnv, dirWithLegacyFallback } from './env.js';
 import OpenAI from 'openai';
+import { accessSync, mkdirSync, constants as fsConstants } from 'node:fs';
+import { homedir } from 'node:os';
+import { join } from 'node:path';
 import type { SmartMemoryConfig } from './types.js';
 
 /**
  * LLM provider for the MCP server.
  *
- * Completions: OpenRouter API (OpenAI-compatible) with OPENROUTER_API_KEY.
- *   Users can select any model available on openrouter.ai.
+ * Completions: any OpenAI-compatible endpoint. OpenRouter by default
+ *   (key in NOMAD_MEMORY_LLM_API_KEY or OPENROUTER_API_KEY); point
+ *   NOMAD_MEMORY_LLM_BASE_URL (legacy ENGRAM_LLM_BASE_URL) at Ollama,
+ *   LM Studio, vLLM, a provider's own OpenAI-compatible API or a proxy.
  *   Default model: anthropic/claude-haiku-4.5 (fast, cheap).
- *   Override with ENGRAM_MODEL env var.
+ *   Override with NOMAD_MEMORY_LLM_MODEL (legacy ENGRAM_MODEL).
  *
  * Embeddings: Local ONNX model via @huggingface/transformers.
  *   Default model: Xenova/bge-small-en-v1.5 (384-dim, ~34 MB, cached after first use).
- *   Override with PRZM_MEMORY_EMBEDDING_MODEL env var (legacy: ENGRAM_EMBEDDING_MODEL).
- *   After changing the model, run `przm-memory-mcp reembed` — stored vectors
+ *   Override with NOMAD_MEMORY_EMBEDDING_MODEL env var (legacy: ENGRAM_EMBEDDING_MODEL).
+ *   After changing the model, run `nomad-memory-mcp reembed` — stored vectors
  *   live in the old model's space and mixed-space search silently degrades.
  *
  * GPU acceleration:
@@ -25,22 +31,35 @@ import type { SmartMemoryConfig } from './types.js';
 
 let _client: OpenAI | null = null;
 
+const OPENROUTER_BASE_URL = 'https://openrouter.ai/api/v1';
+
+/**
+ * Where completions go and with what key, or null when no LLM is configured. A custom base URL
+ * needs no key: local servers usually don't check one, but the OpenAI SDK insists on a value.
+ */
+function resolveLlmEndpoint(): { baseURL: string; apiKey: string } | null {
+  const baseURL = memEnv('LLM_BASE_URL', ['ENGRAM_LLM_BASE_URL']) ?? OPENROUTER_BASE_URL;
+  const apiKey = memEnv('LLM_API_KEY')
+    ?? process.env.OPENROUTER_API_KEY
+    ?? (baseURL !== OPENROUTER_BASE_URL ? 'local' : undefined);
+  return apiKey ? { baseURL, apiKey } : null;
+}
+
 function getClient(): OpenAI | null {
   if (_client) return _client;
-  // ENGRAM_LLM_BASE_URL lets users point at any OpenAI-compatible
-  // server (Ollama, LM Studio, llama.cpp, vLLM, a self-hosted proxy).
-  // When set, OPENROUTER_API_KEY can be any non-empty string — local
-  // servers usually don't check it, but the OpenAI SDK insists on one.
-  const baseURL = process.env.ENGRAM_LLM_BASE_URL ?? 'https://openrouter.ai/api/v1';
-  const isLocal = baseURL !== 'https://openrouter.ai/api/v1';
-  const apiKey = process.env.OPENROUTER_API_KEY ?? (isLocal ? 'local' : undefined);
-  if (!apiKey) return null;
-  _client = new OpenAI({ baseURL, apiKey });
+  const endpoint = resolveLlmEndpoint();
+  if (!endpoint) return null;
+  _client = new OpenAI(endpoint);
   return _client;
 }
 
 export function isLlmAvailable(): boolean {
-  return !!process.env.OPENROUTER_API_KEY || !!process.env.ENGRAM_LLM_BASE_URL;
+  return resolveLlmEndpoint() !== null;
+}
+
+export function getLlmModelName(): string {
+  return memEnv('LLM_MODEL', ['ENGRAM_MODEL', 'SMART_MEMORY_MODEL'])
+    ?? 'anthropic/claude-haiku-4.5';
 }
 
 export async function llmComplete(
@@ -52,14 +71,14 @@ export async function llmComplete(
   const client = getClient();
   if (!client) {
     throw new Error(
-      'OPENROUTER_API_KEY is required for LLM-powered features (extraction, re-ranking, procedural rules). ' +
-      'Get one at https://openrouter.ai/keys -- any model provider works.'
+      'No LLM configured for LLM-powered features (extraction, re-ranking, procedural rules). ' +
+      'Set NOMAD_MEMORY_LLM_BASE_URL to any OpenAI-compatible endpoint (a local Ollama needs no key), ' +
+      'or NOMAD_MEMORY_LLM_API_KEY / OPENROUTER_API_KEY for OpenRouter.'
     );
   }
 
-  const model = process.env.ENGRAM_MODEL ?? process.env.SMART_MEMORY_MODEL ?? 'anthropic/claude-haiku-4.5';
   const response = await client.chat.completions.create({
-    model,
+    model: getLlmModelName(),
     max_tokens: opts?.maxTokens ?? 1000,
     temperature: opts?.temperature ?? 0,
     messages: [
@@ -78,9 +97,7 @@ export const DEFAULT_EMBEDDING_MODEL = 'Xenova/bge-small-en-v1.5';
 export const LEGACY_EMBEDDING_MODEL = 'Xenova/all-MiniLM-L6-v2';
 
 export function getEmbeddingModelName(): string {
-  return process.env.PRZM_MEMORY_EMBEDDING_MODEL
-    ?? process.env.ENGRAM_EMBEDDING_MODEL
-    ?? process.env.SMART_MEMORY_EMBEDDING_MODEL
+  return memEnv('EMBEDDING_MODEL', ['ENGRAM_EMBEDDING_MODEL', 'SMART_MEMORY_EMBEDDING_MODEL'])
     ?? DEFAULT_EMBEDDING_MODEL;
 }
 
@@ -210,15 +227,38 @@ function makeProgressReporter(): (progress: unknown) => void {
           if (!seen.has(threshold)) {
             seen.add(threshold);
             const mb = p.total ? ` (${(p.total / 1_000_000).toFixed(1)}MB)` : '';
-            console.error(`przm-memory: downloading ${p.file}${mb} — ${threshold}%`);
+            console.error(`nomad-memory: downloading ${p.file}${mb} — ${threshold}%`);
           }
         }
       }
     } else if (p.status === 'done' && !announced.has(p.file)) {
       // Cached-file path: progress events never fired, just a 'done'.
-      console.error(`przm-memory: ${p.file} (cached)`);
+      console.error(`nomad-memory: ${p.file} (cached)`);
     }
   };
+}
+
+/**
+ * Where the embedding model is cached. `NOMAD_MEMORY_MODEL_DIR` wins. Otherwise the library's
+ * default (inside node_modules) is kept while it is writable, so an existing cache keeps
+ * working; a global or npx install often can't write there, and the download then fails or
+ * stalls, so it falls back to ~/.cache/nomad-memory/models.
+ */
+export function resolveModelCacheDir(libraryDefault: string): string {
+  const override = memEnv('MODEL_DIR');
+  if (override) {
+    mkdirSync(override, { recursive: true });
+    return override;
+  }
+  try {
+    mkdirSync(libraryDefault, { recursive: true });
+    accessSync(libraryDefault, fsConstants.W_OK);
+    return libraryDefault;
+  } catch {
+    const fallback = dirWithLegacyFallback(join(homedir(), '.cache'), 'models');
+    mkdirSync(fallback, { recursive: true });
+    return fallback;
+  }
 }
 
 async function getExtractor(): Promise<ExtractorFn> {
@@ -226,15 +266,16 @@ async function getExtractor(): Promise<ExtractorFn> {
 
   if (!_extractorLoading) {
     _extractorLoading = (async () => {
-      const { pipeline } = await import('@huggingface/transformers');
+      const { pipeline, env } = await import('@huggingface/transformers');
       const modelName = getEmbeddingModelName();
       const device = getDevice();
-      console.error(`przm-memory: loading embedding model ${modelName} (device: ${device})...`);
-      console.error(`przm-memory: first-time setup downloads the model once, then caches at ~/.cache/huggingface`);
+      if (env.cacheDir) env.cacheDir = resolveModelCacheDir(env.cacheDir);
+      console.error(`nomad-memory: loading embedding model ${modelName} (device: ${device})...`);
+      console.error(`nomad-memory: first-time setup downloads the model once, then caches at ${env.cacheDir}`);
       const progress_callback = makeProgressReporter();
       const loaded = await pipeline('feature-extraction', modelName, { device, progress_callback } as never);
       _extractor = loaded as unknown as ExtractorFn;
-      console.error('przm-memory: embedding model ready');
+      console.error('nomad-memory: embedding model ready');
       return _extractor;
     })();
   }
@@ -261,14 +302,14 @@ async function getExtractor(): Promise<ExtractorFn> {
  */
 export function warmEmbeddings(): Promise<void> {
   if (process.env.ENGRAM_SKIP_EMBED === '1') return Promise.resolve();
-  console.error('przm-memory: pre-warming embedding model in background (first query will not pay the cold-start cost)');
+  console.error('nomad-memory: pre-warming embedding model in background (first query will not pay the cold-start cost)');
   return getExtractor().then(
     () => undefined,
     (err) => {
       // Don't crash the server — embeddings can fail to load on systems
       // without the runtime deps installed. Subsequent embed() calls
       // will hit the same error and fall through to keyword-only mode.
-      console.error('przm-memory: background embedding warmup failed (continuing without):', err);
+      console.error('nomad-memory: background embedding warmup failed (continuing without):', err);
     },
   );
 }
@@ -303,7 +344,7 @@ export async function embed(
 
     return full;
   } catch (err) {
-    console.error('przm-memory: embedding failed, falling back to keyword-only:', err);
+    console.error('nomad-memory: embedding failed, falling back to keyword-only:', err);
     return [];
   }
 }

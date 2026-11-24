@@ -11,6 +11,7 @@
  * `hooks/lane.sh` computes the same name in bash for the hooks; tests/lane.test.ts
  * holds the two to each other.
  */
+import { memEnv } from './env.js';
 import { basename } from 'node:path';
 const DEFAULT_LANE = 'claude';
 export function normalizeLane(raw) {
@@ -25,7 +26,7 @@ export function laneFromConfigDir(configDir) {
     return normalizeLane(basename(dir).replace(/^\.+/, ''));
 }
 export function currentLane(env = process.env) {
-    const override = env.PRZM_MEMORY_LANE?.trim();
+    const override = memEnv('LANE', [], env)?.trim();
     if (override)
         return normalizeLane(override);
     return laneFromConfigDir(env.CLAUDE_CONFIG_DIR);

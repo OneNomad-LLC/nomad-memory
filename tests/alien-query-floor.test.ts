@@ -42,7 +42,7 @@ import { join } from 'node:path';
 
 // Opt out of the credentials-file auto-route so this local-storage test
 // can't silently hit przm Cloud on a developer machine where someone
-// previously ran `przm-memory login`. The fix this guards against
+// previously ran `nomad-memory login`. The fix this guards against
 // shipped in v1.0.1; see CHANGELOG for context.
 process.env.ENGRAM_NO_AUTO_CLOUD = '1';
 

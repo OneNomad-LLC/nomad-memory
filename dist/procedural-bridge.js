@@ -1,3 +1,4 @@
+import { memEnv } from './env.js';
 import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { homedir } from 'node:os';
@@ -6,7 +7,7 @@ import { homedir } from 'node:os';
  * load it read the real file under $HOME from inside the test suite.
  */
 function bridgePath() {
-    return process.env.PRZM_MEMORY_BRIDGE_PATH ?? process.env.ENGRAM_BRIDGE_PATH ?? join(homedir(), '.claude', 'procedural-bridge.json');
+    return memEnv('BRIDGE_PATH', ['ENGRAM_BRIDGE_PATH']) ?? join(homedir(), '.claude', 'procedural-bridge.json');
 }
 // ── File I/O ───────────────────────────────────────────────────────
 export function loadBridgeFile() {
@@ -28,7 +29,7 @@ export function saveBridgeFile(data) {
     data.lastUpdated = new Date().toISOString();
     writeFileSync(bridgePath(), JSON.stringify(data, null, 2), 'utf-8');
 }
-// ── Export przm Memory Rules → Bridge ──────────────────────────────
+// ── Export Nomad Memory Rules → Bridge ──────────────────────────────
 export async function exportRulesToBridge(storage) {
     const rules = await storage.getRules();
     const exportable = rules.filter(r => r.confidence > 0.3);
@@ -50,7 +51,7 @@ export async function exportRulesToBridge(storage) {
     saveBridgeFile(bridge);
     return engramRules.length;
 }
-// ── Import Voice Rules → przm Memory ───────────────────────────────
+// ── Import Voice Rules → Nomad Memory ───────────────────────────────
 export async function importRulesFromBridge(storage) {
     const bridge = loadBridgeFile();
     const personaRules = bridge.rules.filter(r => r.source === 'persona');
@@ -59,7 +60,7 @@ export async function importRulesFromBridge(storage) {
     let reinforced = 0;
     let conflicts = 0;
     for (const pr of personaRules) {
-        // Check if a matching przm Memory rule exists (word overlap)
+        // Check if a matching Nomad Memory rule exists (word overlap)
         const matchIdx = findMatchingRule(pr.rule, existing);
         if (matchIdx >= 0) {
             const match = existing[matchIdx];

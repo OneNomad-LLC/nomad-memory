@@ -1,11 +1,11 @@
 ---
-name: przm-memory
+name: nomad-memory
 description: Intelligent memory manager with LLM-powered extraction, hybrid ANN vector+keyword search, tier lifecycle, spreading activation, procedural rules, WAL capture, and session-state hot RAM. Use when the user asks about memory, preferences, or past conversations.
-homepage: https://github.com/OneNomad-LLC/przm-memory
+homepage: https://github.com/OneNomad-LLC/nomad-memory
 metadata: {"version":"1.0.0-beta.7","categories":["memory","intelligence","personalization"]}
 ---
 
-# przm Memory
+# Nomad Memory
 
 An intelligent memory system that automatically extracts, stores, searches, and maintains memories from conversations. Inspired by cognitive science research on memory consolidation, spreading activation, and reconsolidation.
 
@@ -40,7 +40,7 @@ Learns behavioral rules from user corrections and explicit instructions. A sente
 - **Domain**: code, communication, workflow, preference, general
 - Restatements reinforce the existing rule instead of adding another
 - Dead rules (confidence = 0) are pruned automatically
-- `przm-memory-mcp rules list | rebuild` shows the table or derives it again from the correction and preference memories
+- `nomad-memory-mcp rules list | rebuild` shows the table or derives it again from the correction and preference memories
 
 ### Recall Outcomes
 The bundled stop and session-end hooks grade `memory-search` results from the transcript: a returned memory whose distinctive material shows up in what the assistant later said or did is **helpful**, one that never does is **irrelevant**. You only need `memory-outcome` for **corrected**, which means the memory was wrong and cannot be inferred.
@@ -58,5 +58,5 @@ A fast-write scratchpad for active session state that survives compaction. Persi
 
 ## Configuration
 
-Set `PRZM_MEMORY_DATA_DIR` to change the data directory (default: `~/.claude/przm-memory`; `ENGRAM_DATA_DIR` still works).
+Set `NOMAD_MEMORY_DATA_DIR` to change the data directory (default: `~/.claude/nomad-memory`; `ENGRAM_DATA_DIR` still works).
 Optional: set `MEM0_API_KEY` environment variable if using Mem0 cloud extraction.

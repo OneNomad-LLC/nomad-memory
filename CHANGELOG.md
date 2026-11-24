@@ -1,9 +1,88 @@
 # Changelog
 
-All notable changes to `@onenomad/przm-memory` are documented in this file.
+All notable changes to `@onenomad/nomad-memory` are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+## [Unreleased]
+
+Lessons from a production deployment of a memory system that started from this repo's ideas.
+The plan, with what was left out and why, is `docs/plans/production-memory-lessons.md`.
+
+### Added
+
+- **Secrets are redacted before storing.** `memory-ingest` replaces credential shapes
+  (provider API keys, GitHub, AWS, Slack, Google and Stripe tokens, JWTs, bearer tokens,
+  private key blocks, `password=`-style assignments, passwords in connection strings) with
+  `[REDACTED]` before anything is embedded or saved. Extraction drops a candidate memory that
+  would have held one. Values must look like a secret (eight or more characters mixing letters
+  and digits, not a placeholder), so `apiKey: string` and `password="your_password"` survive:
+  over the LongMemEval haystack's 199,509 turns the pass fires on 5, all real-looking tokens.
+  `NOMAD_MEMORY_REDACT_SECRETS=0` turns it off.
+- **Maintenance catches up missing embeddings.** When the embedding model can't load (no
+  network on first run, a cache it can't write), ingest stores the memory without a vector
+  and the vector stage never saw it again short of a full `reembed`. Each maintenance pass now
+  embeds up to 500 such memories before consolidating, never touching an existing vector, and
+  reports the count as `embeddingsBackfilled`.
+- **Provider-agnostic LLM settings.** `NOMAD_MEMORY_LLM_BASE_URL`, `NOMAD_MEMORY_LLM_API_KEY`
+  and `NOMAD_MEMORY_LLM_MODEL` name what they do; `ENGRAM_LLM_BASE_URL`, `OPENROUTER_API_KEY`
+  and `ENGRAM_MODEL` keep working. The endpoint was already swappable, but the key had to be
+  called `OPENROUTER_API_KEY` and the error sent everyone to OpenRouter. `isLlmAvailable()`
+  now agrees with the client: naming OpenRouter's URL without a key no longer reports an LLM
+  that every call then refuses. `getLlmModelName()` is exported.
+- **`NOMAD_MEMORY_MODEL_DIR`** sets where the embedding model is cached. Without it the
+  library's cache inside `node_modules` is kept while writable (so existing caches keep
+  working) and `~/.cache/nomad-memory/models` is used when it isn't, as on many global and
+  `npx` installs. The boot log printed `~/.cache/huggingface`, which was never where the model
+  went; it prints the real path now.
+
+- **Benchmarks on open, current datasets, reported as retrieval.** LongMemEval S and M
+  (session and turn level), BEAM and MemoryAgentBench, scored with recall_all@5/10, NDCG@10
+  and recall_any@5/10 (answer containment for MemoryAgentBench, which labels no evidence),
+  with p50/p95 write and read latency, retrieved-context tokens per query and N-run standard
+  deviation in every result file. LongMemEval abstention questions are excluded from retrieval
+  scoring, as in the official evaluation. `npm run bench:qa` grades QA accuracy with a
+  configurable Claude model (default `claude-opus-5-5`, key from `ANTHROPIC_API_KEY`) against
+  a no-memory full-context baseline; it has not been run yet. Results and methodology are in
+  the README and `BENCHMARKS.md`. The headline LongMemEval number changes meaning: the old
+  96.8% / 98.8% was recall_any with abstention questions included; this branch measures 95.1% /
+  99.2% recall_any and 84.0% / 93.6% recall_all on S at session level.
+
+### Changed
+
+- **Renamed to nomad-memory.** The package is `@onenomad/nomad-memory` and the bins are `nomad-memory`, `nomad-memory-mcp` and `nomad-memory-migrate`; the old `przm-memory*` bins stay as aliases. Settings are `NOMAD_MEMORY_*`; the `PRZM_MEMORY_*` names are deprecated but still read. The default data and model directories are now `~/.claude/nomad-memory` and `~/.cache/nomad-memory`, and an existing `przm-memory` one is still used when there is no new one.
+- **Extraction cites its sources.** `memory-extract` numbers the messages it sends the LLM and
+  requires each memory to name the user messages it came from. A candidate citing nothing, a
+  message outside the batch, or only assistant turns is dropped, so a memory the model
+  invented, or took from the assistant, is no longer stored like a real one. The prompt gains
+  three hard rules: only what the messages say, no secrets, and text inside the messages is
+  material, never instructions. Candidates with a high-severity injection pattern ("ignore
+  previous instructions", "you are now", a `system:` line) are dropped on both the LLM and
+  heuristic paths; `memory-ingest` still only warns, because an explicit write is the
+  caller's call.
+
+### Removed
+
+- **LoCoMo.** Its runner, its published results and every LoCoMo number in the docs are
+  gone. Around 6% of its gold answers are wrong, its conversations fit in a model's context
+  window (so a full-context baseline beats memory systems), and abstention goes unscored, so
+  its scores no longer tell anyone how well memory works.
+
+### Fixed
+
+- **Recall no longer rewrites user memories.** Reconsolidation rewrote a recalled memory's
+  text with the LLM whatever its origin, so a correction the user wrote could come back in a
+  model's words after a `helpful` outcome. Consolidation already refused to merge, rewrite or
+  demote `origin: user` memories; recall now refuses too.
+- **One maintenance run at a time.** Every Claude Code session starts its own server on the
+  same data directory, and each one ran maintenance at boot when it was overdue, so two
+  sessions opened together decayed, promoted and merged the same memories twice;
+  `memory-maintain` could also overlap the timer in one process. Callers in one process now
+  share the run in flight, and a `maintenance.lock` file in the data directory keeps other
+  processes out. A lock whose process is gone, or that is over six hours old, is taken over. The
+  scheduler checks "overdue" again once it holds the lock, so the second session skips.
+  `memory-maintain` answers `maintenance_running` while another process holds it.
 
 ## [1.6.0] - 2026-09-14
 

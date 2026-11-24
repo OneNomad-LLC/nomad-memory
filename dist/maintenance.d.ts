@@ -30,6 +30,8 @@ export interface MaintenanceResult extends ConsolidationStats {
     kgTriplesExtracted: number;
     diaryDigestWritten: boolean;
     taxonomyRewritten: number;
+    /** Chunks that had no vector and were embedded this pass. */
+    embeddingsBackfilled: number;
 }
 export declare function readMaintenanceState(dataDir: string): MaintenanceState;
 export declare function autoMaintainEnabled(): boolean;
@@ -52,4 +54,14 @@ export declare function rebuildRules(config: SmartMemoryConfig, storage: Storage
  * identical.
  */
 export declare function runMaintenance(config: SmartMemoryConfig, storage: Storage): Promise<MaintenanceResult>;
+/**
+ * The scheduler's entry point: takes the lock, then checks "overdue" again, so the second of
+ * two sessions booting together finds the first one's fresh stamp and does nothing. Null when
+ * there was nothing to do; throws MaintenanceBusyError when another process is mid-run.
+ */
+export declare function runMaintenanceIfOverdue(config: SmartMemoryConfig, storage: Storage): Promise<MaintenanceResult | null>;
+/** Another process holds the maintenance lock. */
+export declare class MaintenanceBusyError extends Error {
+    constructor(holder: string);
+}
 export {};

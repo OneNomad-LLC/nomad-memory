@@ -318,7 +318,7 @@ export class FileStorageAdapter {
             }
         }
         catch (err) {
-            console.error('przm-memory: chunk table optimize failed (non-fatal):', err);
+            console.error('nomad-memory: chunk table optimize failed (non-fatal):', err);
         }
     }
     async chunkCount() {

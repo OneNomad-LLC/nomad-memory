@@ -1,8 +1,8 @@
 {
-  "name": "@onenomad/przm-memory",
+  "name": "@onenomad/nomad-memory",
   "version": "1.6.0",
-  "mcpName": "io.github.onenomad-llc/przm-memory",
-  "description": "przm Memory — local-first memory MCP server for AI agents. Part of the przm AI reliability suite. LLM-powered extraction, hybrid ANN search, tier lifecycle, spreading activation, procedural rules, real-time ingest, and session-state.",
+  "mcpName": "io.github.onenomad-llc/nomad-memory",
+  "description": "Nomad Memory — local-first memory MCP server for AI agents. LLM-powered extraction, hybrid ANN search, tier lifecycle, spreading activation, procedural rules, real-time ingest, and session-state.",
   "type": "module",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -15,6 +15,9 @@
     "./cli": "./dist/cli.js"
   },
   "bin": {
+    "nomad-memory": "dist/server.js",
+    "nomad-memory-mcp": "dist/cli.js",
+    "nomad-memory-migrate": "dist/migrate.js",
     "przm-memory": "dist/server.js",
     "przm-memory-mcp": "dist/cli.js",
     "przm-memory-migrate": "dist/migrate.js"
@@ -29,9 +32,9 @@
   ],
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/OneNomad-LLC/przm-memory.git"
+    "url": "git+https://github.com/OneNomad-LLC/nomad-memory.git"
   },
-  "homepage": "https://github.com/OneNomad-LLC/przm-memory",
+  "homepage": "https://github.com/OneNomad-LLC/nomad-memory",
   "license": "Apache-2.0",
   "engines": {
     "node": ">=22.0.0"
@@ -48,17 +51,19 @@
     "bench": "node --import tsx benchmarks/bench.ts",
     "bench:verbose": "node --import tsx benchmarks/bench.ts --verbose",
     "bench:longmemeval": "node --import tsx benchmarks/longmemeval.ts",
-    "bench:locomo": "node --import tsx benchmarks/locomo.ts",
+    "bench:beam": "node --import tsx benchmarks/beam.ts",
+    "bench:mab": "node --import tsx benchmarks/memoryagentbench.ts",
+    "bench:qa": "node --import tsx benchmarks/qa.ts",
     "bench:throughput": "node --import tsx benchmarks/ingest-throughput.ts",
     "bench:latency": "node --import tsx benchmarks/query-latency.ts",
     "bench:download": "bash benchmarks/download-datasets.sh",
     "bench:all": "node --import tsx benchmarks/bench-all.ts"
   },
   "dependencies": {
-    "openai": "^4.80.0",
     "@huggingface/transformers": "^4.0.1",
     "@lancedb/lancedb": "^0.27.2",
     "@modelcontextprotocol/sdk": "^1.12.1",
+    "openai": "^4.80.0",
     "zod": "^3.24.0"
   },
   "optionalDependencies": {
@@ -68,7 +73,10 @@
     "web-streams-polyfill": "^3.3.3"
   },
   "devDependencies": {
+    "@anthropic-ai/sdk": "^1.12.0",
     "@types/node": "^22.0.0",
+    "hyparquet": "^1.33.1",
+    "hyparquet-compressors": "^1.1.3",
     "tsx": "^4.21.0",
     "typescript": "^5.7.0"
   }
