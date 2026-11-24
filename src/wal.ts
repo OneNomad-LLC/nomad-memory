@@ -68,7 +68,7 @@ export interface IngestEntry {
   /**
    * When true, skip the per-chunk KG triple extraction. The standalone
    * benchmark harnesses bypass this (they call saveChunk directly, never enter
-   * wal.ts), which is why their wall-clock is ~50× faster than przm's
+   * wal.ts), which is why their wall-clock is ~50× faster than Nomad Memory's
    * MCP-boundary bench on the same dataset.
    *
    * Real users keep KG extraction (it powers engram-dossier,
@@ -167,7 +167,7 @@ export async function ingest(
     if (redactionEnabled()) {
       const { text, redacted } = redactSecrets(trimmedContent);
       if (redacted > 0) {
-        console.error(`przm-memory: redacted ${redacted} secret(s) before storing`);
+        console.error(`nomad-memory: redacted ${redacted} secret(s) before storing`);
         trimmedContent = text;
       }
     }
@@ -177,11 +177,11 @@ export async function ingest(
     // Advisory poisoning check — log warning but never block
     const poisonFlag = checkContentPoisoning(trimmedContent);
     if (poisonFlag) {
-      console.error(`przm-memory governance: ${poisonFlag} in "${trimmedContent.slice(0, 80)}..."`);
+      console.error(`nomad-memory governance: ${poisonFlag} in "${trimmedContent.slice(0, 80)}..."`);
     }
 
     // Same-source ingest dedup. When the agent re-reads a stable file
-    // or re-polls an unchanged endpoint within the same przm Memory process,
+    // or re-polls an unchanged endpoint within the same Nomad Memory process,
     // we've already chunked + embedded + saved this content. Look up
     // the (source, content-hash) pair in the in-memory cache and short-
     // circuit the rest of the pipeline on a hit. Reuses the prior

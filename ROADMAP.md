@@ -1,7 +1,7 @@
 # Roadmap
 
 Ordered work derived from the May 2026 cross-cutting audit
-(`/tmp/research/przm-memory/REPORT.md` and the four section reports under
+(`/tmp/research/nomad-memory/REPORT.md` and the four section reports under
 the same directory). Each item is sized so it can become a single PR.
 The "Why" line is the load-bearing rationale; the "Revisit if" line is
 when this item should be deferred or skipped.
@@ -101,7 +101,7 @@ in the pipeline.
 **Approach:** Wire `bm25` (npm) or call Pyserini in the bench harness.
 Run on LongMemEval S and M and three BEIR datasets (TREC-COVID,
 SCIDOCS, FiQA). Commit results to `benchmarks/results/published/`. If
-tuned-BM25 hits within 5pp of przm on LongMemEval, the README's framing
+tuned-BM25 hits within 5pp of Nomad Memory on LongMemEval, the README's framing
 needs to soften to "tuned against LongMemEval; OOD performance
 measured below."
 
@@ -132,7 +132,7 @@ for regulated verticals (DEBT-005). Pattern-share with Cortex.
 
 ### R-015 — Ship a Vercel AI SDK provider
 
-`@onenomad/przm-memory-ai-sdk` targeting PR
+`@onenomad/nomad-memory-ai-sdk` targeting PR
 [#11861](https://github.com/vercel/ai/pull/11861)'s `MemoryAdapter`
 interface. Mem0 and Letta already ship providers — whichever memory
 backend ships the popular adapter wins default-status for
@@ -156,7 +156,7 @@ Hobby → Starter funnel. Gated on R-014 closing for safety.
 
 ### R-017 — HTTP MCP transport + minimal REST API
 
-MemMachine ships both stdio and HTTP MCP; przm-memory is
+MemMachine ships both stdio and HTTP MCP; nomad-memory is
 stdio-only. The Cortex repo has an auth-token pattern
 (`PRZM_CORTEX_MCP_AUTH_TOKEN`) — extract a shared transport layer.
 Unblocks web embedding and the prosumer tier.
@@ -251,7 +251,7 @@ or bundle into a "tidy week."
   `persona: {...}` (`src/server.ts`).
 - Episodic clustering determinism. Sort candidates by `createdAt`
   before greedy clustering (`src/episodic-consolidator.ts:127-151`).
-- Backup tooling for LanceDB. Add a `przm-memory-backup` CLI.
+- Backup tooling for LanceDB. Add a `nomad-memory-backup` CLI.
 - Update WAL filename / comment alignment
   (`src/wal.ts:1`, `src/index.ts:47`). Either implement the WAL or
   rename the file.

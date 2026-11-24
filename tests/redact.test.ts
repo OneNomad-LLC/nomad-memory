@@ -68,7 +68,7 @@ describe('redactSecrets', () => {
 
 describe('write paths', () => {
   it('ingest stores the redacted text', async () => {
-    const dir = mkdtempSync(join(tmpdir(), 'przm-redact-'));
+    const dir = mkdtempSync(join(tmpdir(), 'nomad-redact-'));
     try {
       const config = loadConfig({ dataDir: dir, enableChunking: false });
       const storage = new Storage(dir);
@@ -83,7 +83,7 @@ describe('write paths', () => {
   });
 
   it('NOMAD_MEMORY_REDACT_SECRETS=0 stores raw text', async () => {
-    const dir = mkdtempSync(join(tmpdir(), 'przm-redact-'));
+    const dir = mkdtempSync(join(tmpdir(), 'nomad-redact-'));
     process.env.NOMAD_MEMORY_REDACT_SECRETS = '0';
     try {
       const config = loadConfig({ dataDir: dir, enableChunking: false });
@@ -99,7 +99,7 @@ describe('write paths', () => {
   });
 
   it('extraction drops a memory that would have held a secret', async () => {
-    const dir = mkdtempSync(join(tmpdir(), 'przm-redact-'));
+    const dir = mkdtempSync(join(tmpdir(), 'nomad-redact-'));
     try {
       const config = loadConfig({ dataDir: dir });
       const storage = new Storage(dir);

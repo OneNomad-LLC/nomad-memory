@@ -1,15 +1,15 @@
 #!/usr/bin/env node
 
 /**
- * przm Memory CLI router.
+ * Nomad Memory CLI router.
  *
  * Usage:
- *   przm-memory-mcp                                                 → run MCP stdio server (back-compat)
- *   przm-memory-mcp search --query <q> [--project <p>] [--limit N]
+ *   nomad-memory-mcp                                                 → run MCP stdio server (back-compat)
+ *   nomad-memory-mcp search --query <q> [--project <p>] [--limit N]
  *                     [--min-relevance F] [--format json|text]
- *   przm-memory-mcp query  [--project <p>] [--tier <t>]
+ *   nomad-memory-mcp query  [--project <p>] [--tier <t>]
  *                     [--min-importance F] [--limit N] [--format json|text]
- *   przm-memory-mcp help
+ *   nomad-memory-mcp help
  *
  * The CLI is additive — it wraps the same search/storage primitives the
  * MCP server uses so hook scripts can pull memories without speaking
@@ -33,38 +33,38 @@ import { repairStore } from './repair.js';
 import type { MemoryTier, SearchResult } from './types.js';
 import type { StoredChunk } from './storage.js';
 
-const HELP = `przm-memory-mcp — memory CLI
+const HELP = `nomad-memory-mcp — memory CLI
 
 Usage:
-  przm-memory-mcp                                              run MCP stdio server
-  przm-memory-mcp search  --query <q> [opts]                   hybrid search
-  przm-memory-mcp query   [opts]                               filter listing
-  przm-memory-mcp reembed [--dry-run]                          re-embed all memories
+  nomad-memory-mcp                                              run MCP stdio server
+  nomad-memory-mcp search  --query <q> [opts]                   hybrid search
+  nomad-memory-mcp query   [opts]                               filter listing
+  nomad-memory-mcp reembed [--dry-run]                          re-embed all memories
                                                                with the active model
-  przm-memory-mcp compact                                      prune old table versions,
+  nomad-memory-mcp compact                                      prune old table versions,
                                                                reclaim disk
-  przm-memory-mcp grade   --transcript <path> --session <id>   infer recall outcomes from a
+  nomad-memory-mcp grade   --transcript <path> --session <id>   infer recall outcomes from a
                           [--final] [--min-turns N] [--dry-run]  Claude Code transcript
-  przm-memory-mcp grade   --all [--dry-run]                     the same over every transcript
+  nomad-memory-mcp grade   --all [--dry-run]                     the same over every transcript
                                                                under ~/.claude/projects
-  przm-memory-mcp context [--cwd <dir>] [--max-chars N]        print session-start context:
+  nomad-memory-mcp context [--cwd <dir>] [--max-chars N]        print session-start context:
                           [--lane L] [--session <id>]            inbox, handoff, rules,
                                                                corrections, project memories
-  przm-memory-mcp inbox   [--lane L] [--all] [--new --session <id>]
+  nomad-memory-mcp inbox   [--lane L] [--all] [--new --session <id>]
                                                                handoffs addressed to this lane
-  przm-memory-mcp handoff send|list|read|ack ...               send a handoff to another lane,
+  nomad-memory-mcp handoff send|list|read|ack ...               send a handoff to another lane,
                                                                list, read or acknowledge one
-                                                               (przm-memory-mcp handoff help)
-  przm-memory-mcp rules   list [--scope <slug>] | rebuild      show the rules table, or throw it
+                                                               (nomad-memory-mcp handoff help)
+  nomad-memory-mcp rules   list [--scope <slug>] | rebuild      show the rules table, or throw it
                                                                away and re-derive it from the
                                                                correction and preference chunks
-  przm-memory-mcp repair  [--dry-run]                          re-ingest memories whose pieces
+  nomad-memory-mcp repair  [--dry-run]                          re-ingest memories whose pieces
                                                                were cut, trim truncated
                                                                summaries, lift user-stated
                                                                corrections to the rule floor
-  przm-memory-mcp login   <server-url> | --server <url>        pair with przm Cloud
-  przm-memory-mcp logout                                       remove cached credentials
-  przm-memory-mcp help                                         this message
+  nomad-memory-mcp login   <server-url> | --server <url>        pair with przm Cloud
+  nomad-memory-mcp logout                                       remove cached credentials
+  nomad-memory-mcp help                                         this message
 
 search options:
   --query <q>            (required) natural-language query
@@ -98,9 +98,9 @@ login options:
                          (PYRE_API_URL env var also works)
 
 Environment:
-  PRZM_MEMORY_DATA_DIR   data directory (default ~/.claude/przm-memory;
+  NOMAD_MEMORY_DATA_DIR   data directory (default ~/.claude/nomad-memory;
                          legacy ENGRAM_DATA_DIR also honored)
-  PRZM_MEMORY_EMBEDDING_MODEL
+  NOMAD_MEMORY_EMBEDDING_MODEL
                          embedding model (default Xenova/bge-small-en-v1.5;
                          legacy ENGRAM_EMBEDDING_MODEL also honored)
   PYRE_API_URL           przm server server URL (login subcommand; alternative
@@ -170,7 +170,7 @@ function parseTier(v: string | undefined): MemoryTier | undefined {
 }
 
 function fail(msg: string): never {
-  process.stderr.write(`przm-memory-mcp: ${msg}\n`);
+  process.stderr.write(`nomad-memory-mcp: ${msg}\n`);
   process.exit(2);
 }
 
@@ -305,8 +305,8 @@ async function runReembed(argv: string[]): Promise<void> {
 
   const current = getEmbeddingModelName();
   const meta = readEmbeddingMeta(config.dataDir);
-  process.stderr.write(`przm-memory-mcp: active model  ${current}\n`);
-  process.stderr.write(`przm-memory-mcp: corpus model  ${meta?.model ?? '(unknown — pre-marker store)'}\n`);
+  process.stderr.write(`nomad-memory-mcp: active model  ${current}\n`);
+  process.stderr.write(`nomad-memory-mcp: corpus model  ${meta?.model ?? '(unknown — pre-marker store)'}\n`);
 
   const chunks = await storage.listChunks();
   const targets = chunks.filter(c => c.consolidationLevel !== -1);
@@ -339,21 +339,21 @@ async function runReembed(argv: string[]): Promise<void> {
     );
   }
 
-  process.stderr.write(`przm-memory-mcp: re-embedding ${targets.length} memories...\n`);
+  process.stderr.write(`nomad-memory-mcp: re-embedding ${targets.length} memories...\n`);
   const started = Date.now();
   const stats = await reembedAll(config, storage, (done, total) => {
-    process.stderr.write(`przm-memory-mcp: ${done}/${total}\n`);
+    process.stderr.write(`nomad-memory-mcp: ${done}/${total}\n`);
   });
   const seconds = ((Date.now() - started) / 1000).toFixed(1);
 
   process.stdout.write(JSON.stringify({ ...stats, model: current, seconds: Number(seconds) }, null, 2) + '\n');
   if (stats.failed > 0) {
     process.stderr.write(
-      `przm-memory-mcp: ${stats.failed} chunks failed — marker not updated, boot warning stays. Re-run to retry.\n`
+      `nomad-memory-mcp: ${stats.failed} chunks failed — marker not updated, boot warning stays. Re-run to retry.\n`
     );
     process.exit(1);
   }
-  process.stderr.write(`przm-memory-mcp: done in ${seconds}s — corpus now in ${current} space\n`);
+  process.stderr.write(`nomad-memory-mcp: done in ${seconds}s — corpus now in ${current} space\n`);
 }
 
 async function runCompact(argv: string[]): Promise<void> {
@@ -366,19 +366,19 @@ async function runCompact(argv: string[]): Promise<void> {
   // Prune every non-current version. Single-process CLI op, so
   // deleteUnverified is safe. Reclaims the fragment/version bloat that
   // per-row writes (recall stats, pre-batch reembed) accumulate over time.
-  process.stderr.write('przm-memory-mcp: compacting chunk table (pruning old versions)...\n');
+  process.stderr.write('nomad-memory-mcp: compacting chunk table (pruning old versions)...\n');
   const started = Date.now();
   await storage.optimizeChunks(0, true);
   const seconds = ((Date.now() - started) / 1000).toFixed(1);
 
   process.stdout.write(JSON.stringify({ compacted: true, seconds: Number(seconds) }, null, 2) + '\n');
-  process.stderr.write(`przm-memory-mcp: done in ${seconds}s — run \`du -sh <dataDir>/lance\` to see reclaimed space\n`);
+  process.stderr.write(`nomad-memory-mcp: done in ${seconds}s — run \`du -sh <dataDir>/lance\` to see reclaimed space\n`);
 }
 
 async function runLoginCmd(argv: string[]): Promise<void> {
   // Server URL is required.  Accept three sources, in precedence:
-  //   1. Positional arg: przm-memory-mcp login https://...
-  //   2. --server flag:  przm-memory-mcp login --server https://...
+  //   1. Positional arg: nomad-memory-mcp login https://...
+  //   2. --server flag:  nomad-memory-mcp login --server https://...
   //   3. PYRE_API_URL env var.
   // If none supplied -- exit 1 with the spec'd message. No defaults
   // are baked in; this binary works against any przm server instance the
@@ -604,12 +604,12 @@ async function main(): Promise<void> {
       await runLogoutCmd(rest);
       return;
     default:
-      process.stderr.write(`przm-memory-mcp: unknown subcommand "${sub}"\n\n${HELP}`);
+      process.stderr.write(`nomad-memory-mcp: unknown subcommand "${sub}"\n\n${HELP}`);
       process.exit(2);
   }
 }
 
 main().catch(err => {
-  process.stderr.write(`przm-memory-mcp: ${(err as Error).stack ?? err}\n`);
+  process.stderr.write(`nomad-memory-mcp: ${(err as Error).stack ?? err}\n`);
   process.exit(1);
 });

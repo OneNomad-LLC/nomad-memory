@@ -28,7 +28,7 @@ function chunk(id: string, over: Partial<StoredChunk> = {}): StoredChunk {
 }
 
 it('embeds chunks missing a vector and nothing else', async () => {
-  const dir = mkdtempSync(join(tmpdir(), 'przm-embed-missing-'));
+  const dir = mkdtempSync(join(tmpdir(), 'nomad-embed-missing-'));
   try {
     const storage = new Storage(dir);
     await storage.ensureReady();

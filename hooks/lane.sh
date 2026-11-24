@@ -5,7 +5,7 @@
 # runs both over the same inputs.
 
 nomad_lane() {
-  local raw="${NOMAD_MEMORY_LANE:-${PRZM_MEMORY_LANE:-}}"
+  local raw="${NOMAD_MEMORY_LANE:-${NOMAD_MEMORY_LANE:-}}"
   if [ -z "$(printf '%s' "$raw" | tr -d '[:space:]')" ]; then
     local dir
     dir="$(printf '%s' "${CLAUDE_CONFIG_DIR:-}" | sed -E 's/^[[:space:]]+|[[:space:]]+$//g; s#/+$##')"

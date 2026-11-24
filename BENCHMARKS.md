@@ -1,4 +1,4 @@
-# przm Memory Benchmarks — Methodology Reference
+# Nomad Memory Benchmarks — Methodology Reference
 
 The short version with results lives in the [README](README.md#benchmarks). This document says
 what each benchmark measures, how the numbers are computed, and how to reproduce them.
@@ -23,7 +23,7 @@ Two different things get called "memory benchmark scores":
 
 - **Retrieval.** Did the evidence land in the top K results? Computed from the dataset's
   evidence labels, no model in the loop, deterministic up to the run-to-run effects noted
-  below. This is what przm-memory itself does, and what we publish.
+  below. This is what nomad-memory itself does, and what we publish.
 - **QA accuracy.** Did a model, reading what was retrieved, answer correctly, as judged by a
   grader model? This depends on the answer model, the grader model and the grading prompt as
   much as on memory. The harness for it is here (`npm run bench:qa`), but we have not

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# przm-memory user-prompt hook — runs before Claude Code handles each prompt.
+# nomad-memory user-prompt hook — runs before Claude Code handles each prompt.
 #
 # Tells the session about handoffs another session on this machine addressed to
 # its lane (the Claude Code config directory it runs under) since it was last
@@ -10,7 +10,7 @@
 # Prints nothing when there is nothing new, and nothing on any failure. It never
 # blocks a prompt.
 
-DATA_DIR="${NOMAD_MEMORY_DATA_DIR:-${PRZM_MEMORY_DATA_DIR:-${ENGRAM_DATA_DIR:-${SMART_MEMORY_DATA_DIR:-}}}}"
+DATA_DIR="${NOMAD_MEMORY_DATA_DIR:-${NOMAD_MEMORY_DATA_DIR:-${ENGRAM_DATA_DIR:-${SMART_MEMORY_DATA_DIR:-}}}}"
 if [ -z "$DATA_DIR" ]; then  # default; keep a pre-rename przm-memory store if it is the only one
   DATA_DIR="$HOME/.claude/nomad-memory"
   [ -d "$DATA_DIR" ] || [ ! -d "$HOME/.claude/przm-memory" ] || DATA_DIR="$HOME/.claude/przm-memory"

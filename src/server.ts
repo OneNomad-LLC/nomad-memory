@@ -91,10 +91,10 @@ function json(data: unknown) { return text(JSON.stringify(data, null, 2)); }
 // ── MCP Server ──────────────────────────────────────────────────────
 
 const server = new McpServer(
-  { name: 'przm-memory', version: getVersion() },
+  { name: 'nomad-memory', version: getVersion() },
   {
     instructions: [
-      'przm Memory is your long-term cross-session memory.',
+      'Nomad Memory is your long-term cross-session memory.',
       'Search it (memory-search) before answering about prior work; ingest durable facts, preferences, and decisions (memory-ingest) as they surface, not batched at the end.',
       'Read a handoff (memory-handoff-read) at session start; write one (memory-handoff-write) before /compact or session end.',
     ].join('\n'),
@@ -219,7 +219,7 @@ server.registerTool(
     description: [
       'Like memory-search, but returns memories that fit within a TOKEN BUDGET instead of a count limit.',
       'Greedy fill from highest-relevance memories: candidates ranked by score × importance, included until the next entry would exceed the budget.',
-      'Used by przm\'s Context Budget Engine: the persona/memories slot allocates N tokens, and przm Memory returns "the most useful subset that fits."',
+      'Used by przm\'s Context Budget Engine: the persona/memories slot allocates N tokens, and Nomad Memory returns "the most useful subset that fits."',
       'Returns the same memory shape as memory-search plus { budgetTokens, usedTokens, includedCount, candidateCount } so callers can see how the budget got spent.',
     ].join(' '),
     inputSchema: z.object({
@@ -697,7 +697,7 @@ server.registerTool(
           'reconsolidation (disabled)',
           'LLM knowledge-graph extraction (regex patterns only)',
         ],
-        llmHint: 'Set PRZM_MEMORY_LLM_BASE_URL (any OpenAI-compatible server, e.g. local Ollama) or PRZM_MEMORY_LLM_API_KEY / OPENROUTER_API_KEY to enable.',
+        llmHint: 'Set NOMAD_MEMORY_LLM_BASE_URL (any OpenAI-compatible server, e.g. local Ollama) or NOMAD_MEMORY_LLM_API_KEY / OPENROUTER_API_KEY to enable.',
       }),
       embeddingModel: getEmbeddingModelName(),
       // Which model the stored vectors were embedded with, and whether a
@@ -847,7 +847,7 @@ server.registerTool(
   {
     title: 'Entity Dossier',
     description: [
-      'Aggregate everything przm Memory knows about an entity (person, project, concept) into a structured snapshot.',
+      'Aggregate everything Nomad Memory knows about an entity (person, project, concept) into a structured snapshot.',
       'Pulls from FOUR sources: (1) KG triples where the entity is subject — definitive facts about the entity; (2) KG triples where the entity is object — facts where others reference the entity (e.g. "Alice reports-to Matt" appears in Matt\'s dossier as referencedBy); (3) memory chunks mentioning the entity in content/tags/topic — preferences, decisions, context; (4) recent activity ordered by createdAt — what came up lately.',
       'Output is grouped by category (facts, preferences, decisions, corrections, recent) so the consumer doesn\'t have to bucket the chunks themselves.',
       'Honors an optional budgetTokens cap; greedy fill within each category when set. Used by przm\'s Context Budget Engine to populate "what we know about <X>" slots without spending the entire memories budget on a search-by-relevance grab bag.',
@@ -1208,9 +1208,9 @@ server.registerTool(
   {
     title: 'Cloud Login (start device-code pairing)',
     description: [
-      'Start a device-code login against a przm Cloud server (the same flow as the `przm-memory login` CLI command).',
+      'Start a device-code login against a przm Cloud server (the same flow as the `nomad-memory login` CLI command).',
       'Returns the URL and user code the human must visit + enter in a browser. AFTER showing those to the user, call `memory-login-resume` with the returned `deviceCode` to poll for approval — it may need to be called more than once if the user is slow.',
-      'On approval the credentials file at `~/.pyre/credentials.json` (or $PYRE_CREDENTIALS_FILE) is written and przm Memory\'s cloud storage adapter starts using it on next server start.',
+      'On approval the credentials file at `~/.pyre/credentials.json` (or $PYRE_CREDENTIALS_FILE) is written and Nomad Memory\'s cloud storage adapter starts using it on next server start.',
     ].join(' '),
     inputSchema: z.object({
       serverUrl: z.string().describe('przm Cloud base URL (e.g. https://przm.sh). No trailing slash needed.'),
@@ -1293,7 +1293,7 @@ server.registerTool(
             label: creds.label,
             scopes: creds.scopes,
             credentialsPath: credentialsPath(),
-            note: 'Credentials written. Restart the przm Memory MCP server (or your MCP client) for cloud storage to take effect.',
+            note: 'Credentials written. Restart the Nomad Memory MCP server (or your MCP client) for cloud storage to take effect.',
           });
         } catch (err) {
           return json({ ok: false, status: 'error', error: `Could not write credentials: ${(err as Error).message}` });
@@ -1342,7 +1342,7 @@ server.registerTool(
   'memory-logout',
   {
     title: 'Cloud Logout',
-    description: 'Delete the local przm Cloud credentials file. Idempotent — succeeds whether or not the file existed. przm Memory falls back to local LanceDB on next server start.',
+    description: 'Delete the local przm Cloud credentials file. Idempotent — succeeds whether or not the file existed. Nomad Memory falls back to local LanceDB on next server start.',
     inputSchema: z.object({}),
   },
   async () => {
@@ -1353,7 +1353,7 @@ server.registerTool(
       loggedOut: removed,
       alreadyLoggedOut: !removed,
       credentialsPath: path,
-      note: removed ? 'Restart the przm Memory MCP server to fall back to local storage.' : undefined,
+      note: removed ? 'Restart the Nomad Memory MCP server to fall back to local storage.' : undefined,
     });
   }
 );
@@ -1380,7 +1380,7 @@ server.registerTool(
       return json({
         enabled: false,
         traces: [],
-        note: 'Retrieval traces are disabled. Enable with ENGRAM_ENABLE_RETRIEVAL_TRACES=true (then restart przm Memory).',
+        note: 'Retrieval traces are disabled. Enable with ENGRAM_ENABLE_RETRIEVAL_TRACES=true (then restart Nomad Memory).',
       });
     }
     const traces = await listRecentTraces(
@@ -1428,7 +1428,7 @@ server.registerTool(
 // persist and auto-load, without inventing preferences the user never
 // stated. Works standalone (memory only) and lights up extra steps when
 // przm-voice is also connected.
-const ONBOARD_PLAYBOOK = `You are running przm-memory onboarding for this user. Goal: capture the durable rules and preferences that should shape how you work for them across ALL future sessions, and store them so they persist and auto-load. Store only what the user actually tells you — never invent preferences.
+const ONBOARD_PLAYBOOK = `You are running nomad-memory onboarding for this user. Goal: capture the durable rules and preferences that should shape how you work for them across ALL future sessions, and store them so they persist and auto-load. Store only what the user actually tells you — never invent preferences.
 
 Work through these phases. Keep it conversational and batch your questions; this is a short setup, not an interrogation.
 
@@ -1447,7 +1447,7 @@ Work through these phases. Keep it conversational and batch your questions; this
 
 3. PERSIST each item as a durable memory. For every rule or preference, call memory-ingest with type "preference" (or type "correction" for a "never do X" rule). Phrase the content as an explicit directive so it extracts cleanly into a procedural rule — begin with "Always ...", "Never ...", "Prefer X over Y", or "rule: ...". Set an accurate domain ("global" for cross-project rules, or the project/client name for scoped ones). Ingest one memory per distinct rule, not a wall of text. If przm-voice is connected, ALSO record each communication/tone item with voice_signal type "explicit_feedback" (include the rule text as content) so tone adapts on the next turn.
 
-4. OFFER the CLAUDE.md integration block. Ask whether to add a przm-memory (+ przm-voice, if present) usage section to their ~/.claude/CLAUDE.md so every future session uses memory correctly: search memory at session start, ingest preferences/corrections as they occur, and write a handoff before /compact. Show the exact block first; only write it with explicit consent; APPEND, never overwrite existing content.
+4. OFFER the CLAUDE.md integration block. Ask whether to add a nomad-memory (+ przm-voice, if present) usage section to their ~/.claude/CLAUDE.md so every future session uses memory correctly: search memory at session start, ingest preferences/corrections as they occur, and write a handoff before /compact. Show the exact block first; only write it with explicit consent; APPEND, never overwrite existing content.
 
 5. CONFIRM. Call memory-rules to show the newly-seeded rules, then summarize what's configured and how it will apply going forward: memory-search surfaces these rules, the daily maintenance keeps them ranked and promoted, and (if voice is on) the procedural bridge syncs them into tone. Note they can re-run this anytime to add more.
 
@@ -1474,7 +1474,7 @@ server.registerPrompt(
 // ─────────────────────────────────────────────────────────────────────
 // Tool names were renamed from engram-* → memory-* in v1.0.0-beta.7.
 // The canonical names are memory-*. As of 1.3.0 the engram-* aliases are
-// opt-in via PRZM_MEMORY_LEGACY_ALIASES=1: they double the tool surface
+// opt-in via NOMAD_MEMORY_LEGACY_ALIASES=1: they double the tool surface
 // and every MCP client pays schema tokens for them on every session.
 //
 // Implementation: after all canonical registrations are done, copy each
@@ -1514,7 +1514,7 @@ if (memEnv('LEGACY_ALIASES') === '1') {
 async function main(): Promise<void> {
   const transport = new StdioServerTransport();
   await server.connect(transport);
-  console.error('przm Memory MCP server running on stdio');
+  console.error('Nomad Memory MCP server running on stdio');
   console.error(`Data dir: ${config.dataDir}`);
   console.error(`LLM: ${isLlmAvailable() ? 'enabled' : 'disabled (heuristic mode)'}`);
   console.error(`Embeddings: local (${getEmbeddingModelName()})`);
@@ -1536,15 +1536,15 @@ async function main(): Promise<void> {
 
   // Embedding-space check: stored vectors must be in the active model's
   // space or search quietly degrades. Warn loudly on mismatch — the fix
-  // is a one-time `przm-memory-mcp reembed`. Never blocks boot.
+  // is a one-time `nomad-memory-mcp reembed`. Never blocks boot.
   void (async () => {
     try {
       const check = await checkEmbeddingMeta(config, await ensureStorage());
       if (check.mismatch) {
         console.error(
-          `przm-memory: WARNING — stored vectors were embedded with ` +
+          `nomad-memory: WARNING — stored vectors were embedded with ` +
           `${check.storedModel ?? `a pre-marker install (assumed MiniLM)`} but the active model is ` +
-          `${check.currentModel}. Search quality is degraded until you run: przm-memory-mcp reembed`
+          `${check.currentModel}. Search quality is degraded until you run: nomad-memory-mcp reembed`
         );
       }
     } catch { /* advisory only */ }
@@ -1558,9 +1558,9 @@ async function main(): Promise<void> {
  * agent explicitly called memory-maintain — in practice never, leaving
  * every chunk frozen in short-term and the rules table empty. Now the
  * server runs a pass shortly after boot when the last run is older than
- * the interval (default 24h, PRZM_MEMORY_MAINTAIN_INTERVAL_HOURS), and
+ * the interval (default 24h, NOMAD_MEMORY_MAINTAIN_INTERVAL_HOURS), and
  * keeps an interval timer for long-lived processes. Disable with
- * PRZM_MEMORY_AUTO_MAINTAIN=0.
+ * NOMAD_MEMORY_AUTO_MAINTAIN=0.
  *
  * The boot pass is delayed 20s so it never competes with the MCP
  * handshake or the embedding warmup; both timers are unref'd so they
@@ -1568,7 +1568,7 @@ async function main(): Promise<void> {
  */
 function scheduleAutoMaintenance(): void {
   if (!autoMaintainEnabled()) {
-    console.error('przm-memory: auto-maintenance disabled (PRZM_MEMORY_AUTO_MAINTAIN=0)');
+    console.error('nomad-memory: auto-maintenance disabled (NOMAD_MEMORY_AUTO_MAINTAIN=0)');
     return;
   }
 
@@ -1579,13 +1579,13 @@ function scheduleAutoMaintenance(): void {
       const result = await runMaintenanceIfOverdue(config, storage);
       if (!result) return;
       console.error(
-        `przm-memory: auto-maintenance done — promoted ${result.promoted}, decayed ${result.decayed}, ` +
+        `nomad-memory: auto-maintenance done — promoted ${result.promoted}, decayed ${result.decayed}, ` +
         `merged ${result.merged}, linked ${result.linked}` +
         (result.rulesBackfilled > 0 ? `, rule backfill over ${result.rulesBackfilled} chunks` : '')
       );
     } catch (err) {
       if (err instanceof MaintenanceBusyError) return; // another session is doing it
-      console.error('przm-memory: auto-maintenance failed (will retry next interval):', err);
+      console.error('nomad-memory: auto-maintenance failed (will retry next interval):', err);
     }
   };
 

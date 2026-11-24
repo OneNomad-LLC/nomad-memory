@@ -55,7 +55,7 @@ describe('LLM settings', () => {
 
 describe('resolveModelCacheDir', () => {
   it('NOMAD_MEMORY_MODEL_DIR wins', () => {
-    const dir = mkdtempSync(join(tmpdir(), 'przm-models-'));
+    const dir = mkdtempSync(join(tmpdir(), 'nomad-models-'));
     process.env.NOMAD_MEMORY_MODEL_DIR = join(dir, 'override');
     try {
       assert.equal(resolveModelCacheDir(join(dir, 'default')), join(dir, 'override'));
@@ -66,7 +66,7 @@ describe('resolveModelCacheDir', () => {
   });
 
   it('keeps a writable library default', () => {
-    const dir = mkdtempSync(join(tmpdir(), 'przm-models-'));
+    const dir = mkdtempSync(join(tmpdir(), 'nomad-models-'));
     try {
       assert.equal(resolveModelCacheDir(join(dir, 'default')), join(dir, 'default'));
     } finally {
@@ -75,7 +75,7 @@ describe('resolveModelCacheDir', () => {
   });
 
   it('falls back under the home directory when the default is not writable', () => {
-    const dir = mkdtempSync(join(tmpdir(), 'przm-models-'));
+    const dir = mkdtempSync(join(tmpdir(), 'nomad-models-'));
     const saved = { HOME: process.env.HOME, USERPROFILE: process.env.USERPROFILE };
     process.env.HOME = dir;
     process.env.USERPROFILE = dir;

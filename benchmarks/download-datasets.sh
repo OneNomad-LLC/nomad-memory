@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# przm-memory benchmark dataset downloader.
+# nomad-memory benchmark dataset downloader.
 #
 # Fetches the open datasets the benchmark suite uses into benchmarks/data/.
 # Idempotent: anything already on disk is skipped. Safe to abort and resume.

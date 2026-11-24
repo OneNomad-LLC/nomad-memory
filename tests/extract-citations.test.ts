@@ -56,7 +56,7 @@ describe('keepCitedCandidates', () => {
 
 describe('injection patterns', () => {
   it('extraction drops a candidate that tries to steer the model', async () => {
-    const dir = mkdtempSync(join(tmpdir(), 'przm-cite-'));
+    const dir = mkdtempSync(join(tmpdir(), 'nomad-cite-'));
     try {
       const config = loadConfig({ dataDir: dir });
       const storage = new Storage(dir);

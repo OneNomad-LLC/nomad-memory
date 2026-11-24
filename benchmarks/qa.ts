@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 /**
- * QA accuracy: an answer model reads either what przm-memory retrieved (memory mode) or the
+ * QA accuracy: an answer model reads either what nomad-memory retrieved (memory mode) or the
  * whole history (full-context mode, the no-memory baseline), and a grader model judges each
  * answer against the gold answer. Both are Claude models through the Anthropic API, both
  * configurable; the key comes from ANTHROPIC_API_KEY. Scores from this grader are not directly

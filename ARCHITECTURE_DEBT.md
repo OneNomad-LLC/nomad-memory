@@ -217,7 +217,7 @@ audit table is the same table both features write to.
 similarity floors, dedupe thresholds) live in
 `getEmbeddingModelProfile()` in `src/llm.ts`, so a swap is a profile
 entry plus floor calibration via `tests/alien-query-floor.test.ts`.
-The corpus migration story exists: `przm-memory-mcp reembed` rewrites
+The corpus migration story exists: `nomad-memory-mcp reembed` rewrites
 every stored vector with the active model, an `embedding-meta.json`
 marker tracks which space the corpus is in, and the server warns at
 boot on mismatch instead of silently degrading.
@@ -455,11 +455,11 @@ once per call. Benching against the R-012 OOD set is still owed.
 ## Resolved (2026-09-01) — Audit fix set (v1.3.0)
 
 September audit findings, all shipped in one branch: hook data dir
-honors `PRZM_MEMORY_DATA_DIR` and defaults to `~/.claude/przm-memory`;
+honors `NOMAD_MEMORY_DATA_DIR` and defaults to `~/.claude/nomad-memory`;
 stale engram-* names swept from commands and hook docs; short-term
 chunks gained an archive exit path and the three retention knobs are
 finally read; engram-* aliases moved behind
-`PRZM_MEMORY_LEGACY_ALIASES` (surface 49 → 29); LLM KG extraction with
+`NOMAD_MEMORY_LEGACY_ALIASES` (surface 49 → 29); LLM KG extraction with
 a closed 15-predicate vocabulary runs batched in maintenance with a
 one-shot backfill; ingest-time taxonomy normalization plus a
 conservative variant-merge pass; maintenance writes a daily diary
@@ -477,10 +477,10 @@ repo shared. Plan and reasoning: `docs/plans/production-memory-lessons.md`.
   in-process, a `maintenance.lock` across processes, taken over when its owner is gone.
 - **Embeddings that fell behind.** A chunk ingested while the model couldn't load was stored
   without a vector forever. Maintenance embeds up to 500 a pass.
-- **Unwritable model cache.** The library caches inside `node_modules`; `PRZM_MEMORY_MODEL_DIR`
+- **Unwritable model cache.** The library caches inside `node_modules`; `NOMAD_MEMORY_MODEL_DIR`
   and a home-directory fallback cover installs that can't write there.
 - **OpenRouter-only naming.** The endpoint was already swappable; the key, model and error
-  message now say so (`PRZM_MEMORY_LLM_*`), and `isLlmAvailable()` agrees with the client.
+  message now say so (`NOMAD_MEMORY_LLM_*`), and `isLlmAvailable()` agrees with the client.
 
 Also closed: recall's reconsolidation rewrote `origin: user` memories, which the origin model
 forbids everywhere else.

@@ -11,7 +11,7 @@
  * The regression this file locks down:
  *   Pre-1.0.1, the factory would silently route to cloud whenever a
  *   ~/.pyre/credentials.json file existed, with no opt-out and no log
- *   line. A user who ran `przm-memory login` once would then have every
+ *   line. A user who ran `nomad-memory login` once would then have every
  *   subsequent invocation hit the wire, even if they expected local
  *   mode. The new ENGRAM_NO_AUTO_CLOUD escape hatch + always-on routing
  *   log are tested here.

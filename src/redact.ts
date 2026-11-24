@@ -7,7 +7,7 @@
  * style assignments, passwords in connection strings), not "anything that looks random", so
  * ordinary prose and code pass through untouched.
  *
- * On by default; `PRZM_MEMORY_REDACT_SECRETS=0` turns it off.
+ * On by default; `NOMAD_MEMORY_REDACT_SECRETS=0` turns it off.
  */
 import { memEnv } from './env.js';
 

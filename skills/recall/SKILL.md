@@ -1,6 +1,6 @@
 ---
 name: recall
-description: "Search and surface memories about a topic, person, event, or time period. Use when the user says /recall or asks 'what do you know about X', 'what did I tell you about X', 'do you remember X'. Searches przm Memory's hybrid pipeline (vector + keyword + temporal + knowledge graph + spreading activation)."
+description: "Search and surface memories about a topic, person, event, or time period. Use when the user says /recall or asks 'what do you know about X', 'what did I tell you about X', 'do you remember X'. Searches Nomad Memory's hybrid pipeline (vector + keyword + temporal + knowledge graph + spreading activation)."
 user-invocable: true
 metadata: {"version":"1.0.0-beta.2"}
 ---
@@ -26,7 +26,7 @@ Search memories about anything the user asks.
 
 ## Examples
 
-- `/recall TypeScript preferences` - What does przm Memory know about the user's TypeScript opinions?
+- `/recall TypeScript preferences` - What does Nomad Memory know about the user's TypeScript opinions?
 - `/recall what was I working on in January` - Temporal search for January activities
 - `/recall Matt's job history` - Knowledge graph entity lookup with timeline
 - `/recall deployment process` - Procedural rules and facts about how the user deploys

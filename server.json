@@ -1,16 +1,16 @@
 {
   "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
   "name": "io.github.onenomad-llc/engram-mcp",
-  "description": "przm Memory: memory MCP server for Claude Code. LLM-powered extraction, hybrid ANN search, tier lifecycle, spreading activation, scoped procedural rules, inferred recall outcomes, session-start context, WAL, and session state.",
+  "description": "Nomad Memory: memory MCP server for Claude Code. LLM-powered extraction, hybrid ANN search, tier lifecycle, spreading activation, scoped procedural rules, inferred recall outcomes, session-start context, WAL, and session state.",
   "repository": {
-    "url": "https://github.com/OneNomad-LLC/przm-memory",
+    "url": "https://github.com/OneNomad-LLC/nomad-memory",
     "source": "github"
   },
   "version": "1.6.0",
   "packages": [
     {
       "registryType": "npm",
-      "identifier": "@onenomad/przm-memory",
+      "identifier": "@onenomad/nomad-memory",
       "version": "1.6.0",
       "transport": {
         "type": "stdio"
@@ -24,8 +24,8 @@
           "format": "string"
         },
         {
-          "name": "PRZM_MEMORY_DATA_DIR",
-          "description": "Directory for the LanceDB store and WAL. Defaults to ~/.claude/przm-memory. ENGRAM_DATA_DIR is still honoured.",
+          "name": "NOMAD_MEMORY_DATA_DIR",
+          "description": "Directory for the LanceDB store and WAL. Defaults to ~/.claude/nomad-memory. ENGRAM_DATA_DIR is still honoured.",
           "isRequired": false,
           "isSecret": false,
           "format": "filepath"

@@ -46,7 +46,7 @@ remember; the SessionStart hook now pushes the handoff, rules, corrections and p
 without being asked. Write the ritual that fits the new mechanism, from what the measurements
 and today's changes show actually matters at the start of a session: what to read, what to
 verify before acting, what to do only when a signal appears, and what not to do. It goes in the
-przm-memory section of ~/.claude/CLAUDE.md, short, because every line there is paid for on
+nomad-memory section of ~/.claude/CLAUDE.md, short, because every line there is paid for on
 every turn of every agent.
 
 ## Phase 3: verify

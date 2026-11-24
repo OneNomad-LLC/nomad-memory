@@ -1,6 +1,6 @@
 # Changelog
 
-All notable changes to `@onenomad/przm-memory` are documented in this file.
+All notable changes to `@onenomad/nomad-memory` are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
@@ -19,21 +19,21 @@ The plan, with what was left out and why, is `docs/plans/production-memory-lesso
   would have held one. Values must look like a secret (eight or more characters mixing letters
   and digits, not a placeholder), so `apiKey: string` and `password="your_password"` survive:
   over the LongMemEval haystack's 199,509 turns the pass fires on 5, all real-looking tokens.
-  `PRZM_MEMORY_REDACT_SECRETS=0` turns it off.
+  `NOMAD_MEMORY_REDACT_SECRETS=0` turns it off.
 - **Maintenance catches up missing embeddings.** When the embedding model can't load (no
   network on first run, a cache it can't write), ingest stores the memory without a vector
   and the vector stage never saw it again short of a full `reembed`. Each maintenance pass now
   embeds up to 500 such memories before consolidating, never touching an existing vector, and
   reports the count as `embeddingsBackfilled`.
-- **Provider-agnostic LLM settings.** `PRZM_MEMORY_LLM_BASE_URL`, `PRZM_MEMORY_LLM_API_KEY`
-  and `PRZM_MEMORY_LLM_MODEL` name what they do; `ENGRAM_LLM_BASE_URL`, `OPENROUTER_API_KEY`
+- **Provider-agnostic LLM settings.** `NOMAD_MEMORY_LLM_BASE_URL`, `NOMAD_MEMORY_LLM_API_KEY`
+  and `NOMAD_MEMORY_LLM_MODEL` name what they do; `ENGRAM_LLM_BASE_URL`, `OPENROUTER_API_KEY`
   and `ENGRAM_MODEL` keep working. The endpoint was already swappable, but the key had to be
   called `OPENROUTER_API_KEY` and the error sent everyone to OpenRouter. `isLlmAvailable()`
   now agrees with the client: naming OpenRouter's URL without a key no longer reports an LLM
   that every call then refuses. `getLlmModelName()` is exported.
-- **`PRZM_MEMORY_MODEL_DIR`** sets where the embedding model is cached. Without it the
+- **`NOMAD_MEMORY_MODEL_DIR`** sets where the embedding model is cached. Without it the
   library's cache inside `node_modules` is kept while writable (so existing caches keep
-  working) and `~/.cache/przm-memory/models` is used when it isn't, as on many global and
+  working) and `~/.cache/nomad-memory/models` is used when it isn't, as on many global and
   `npx` installs. The boot log printed `~/.cache/huggingface`, which was never where the model
   went; it prints the real path now.
 
@@ -51,6 +51,7 @@ The plan, with what was left out and why, is `docs/plans/production-memory-lesso
 
 ### Changed
 
+- **Renamed to nomad-memory.** The package is `@onenomad/nomad-memory` and the bins are `nomad-memory`, `nomad-memory-mcp` and `nomad-memory-migrate`; the old `przm-memory*` bins stay as aliases. Settings are `NOMAD_MEMORY_*`; the `PRZM_MEMORY_*` names are deprecated but still read. The default data and model directories are now `~/.claude/nomad-memory` and `~/.cache/nomad-memory`, and an existing `przm-memory` one is still used when there is no new one.
 - **Extraction cites its sources.** `memory-extract` numbers the messages it sends the LLM and
   requires each memory to name the user messages it came from. A candidate citing nothing, a
   message outside the batch, or only assistant turns is dropped, so a memory the model

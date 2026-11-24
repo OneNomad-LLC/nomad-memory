@@ -3,7 +3,7 @@
  *
  * A benchmark hands over a corpus (items, each with a `source` id) and queries (each with the
  * relevant source ids, or gold answer strings when the dataset has no evidence labels). The
- * engine stores the corpus in a fresh local store, runs przm-memory's `search()` for every
+ * engine stores the corpus in a fresh local store, runs nomad-memory's `search()` for every
  * query, and scores what came back. It measures write latency (embed plus an amortised share
  * of the batched store write, per item), read latency (one `search()`), and the tokens of the
  * retrieved context a model would have to read.
@@ -110,7 +110,7 @@ export async function evaluateCorpus(
 ): Promise<{ outcomes: QueryOutcome[]; writeMs: number[] }> {
   // Let fire-and-forget writes from the previous corpus drain before LanceDB opens again.
   await new Promise(resolve => setImmediate(resolve));
-  const dir = join(tmpdir(), `przm-bench-${randomUUID()}`);
+  const dir = join(tmpdir(), `nomad-bench-${randomUUID()}`);
   mkdirSync(dir, { recursive: true });
   const config = benchConfig(dir);
   const storage = new Storage(dir);

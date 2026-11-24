@@ -16,7 +16,7 @@ import { buildContextPrefix } from './utils.js';
  *
  * A marker file (<dataDir>/embedding-meta.json) records which model the
  * corpus was last embedded with. The server checks it at boot and warns
- * loudly on mismatch; `przm-memory-mcp reembed` rewrites every stored
+ * loudly on mismatch; `nomad-memory-mcp reembed` rewrites every stored
  * vector with the current model and updates the marker.
  */
 

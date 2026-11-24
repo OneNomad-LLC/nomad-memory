@@ -12,7 +12,7 @@ import { join } from 'node:path';
 
 process.env.ENGRAM_NO_AUTO_CLOUD = '1';
 process.env.ENGRAM_SKIP_EMBED = '1';
-process.env.NOMAD_MEMORY_BRIDGE_PATH = join(tmpdir(), `przm-lock-bridge-${process.pid}.json`);
+process.env.NOMAD_MEMORY_BRIDGE_PATH = join(tmpdir(), `nomad-lock-bridge-${process.pid}.json`);
 delete process.env.OPENROUTER_API_KEY;
 delete process.env.ENGRAM_LLM_BASE_URL;
 delete process.env.NOMAD_MEMORY_LLM_BASE_URL;
@@ -27,7 +27,7 @@ import {
 } from '../src/maintenance.js';
 
 async function store() {
-  const dir = mkdtempSync(join(tmpdir(), 'przm-lock-'));
+  const dir = mkdtempSync(join(tmpdir(), 'nomad-lock-'));
   const storage = new Storage(dir);
   await storage.ensureReady();
   return { dir, storage, config: loadConfig({ dataDir: dir }), cleanup: () => rmSync(dir, { recursive: true, force: true }) };

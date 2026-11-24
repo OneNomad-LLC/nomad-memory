@@ -6,14 +6,14 @@ import type { ProceduralRule } from './types.js';
 import { Storage } from './storage.js';
 
 /**
- * Procedural bridge — shared interchange between przm Memory and przm Voice.
+ * Procedural bridge — shared interchange between Nomad Memory and przm Voice.
  *
  * Both servers read/write a neutral JSON file at ~/.claude/procedural-bridge.json.
  * Neither imports code from the other. The AI client can also trigger sync
  * explicitly via tools.
  *
- * przm Memory exports its procedural rules with confidence > 0.3.
- * przm Memory imports Voice-sourced rules as new ProceduralRules with low initial confidence.
+ * Nomad Memory exports its procedural rules with confidence > 0.3.
+ * Nomad Memory imports Voice-sourced rules as new ProceduralRules with low initial confidence.
  *
  * Note: the `source` discriminator on BridgeRule still uses the legacy
  * `'engram' | 'persona'` literal so existing on-disk bridge files
@@ -70,7 +70,7 @@ export function saveBridgeFile(data: ProceduralInterchange): void {
   writeFileSync(bridgePath(), JSON.stringify(data, null, 2), 'utf-8');
 }
 
-// ── Export przm Memory Rules → Bridge ──────────────────────────────
+// ── Export Nomad Memory Rules → Bridge ──────────────────────────────
 
 export async function exportRulesToBridge(storage: Storage): Promise<number> {
   const rules = await storage.getRules();
@@ -98,7 +98,7 @@ export async function exportRulesToBridge(storage: Storage): Promise<number> {
   return engramRules.length;
 }
 
-// ── Import Voice Rules → przm Memory ───────────────────────────────
+// ── Import Voice Rules → Nomad Memory ───────────────────────────────
 
 export async function importRulesFromBridge(
   storage: Storage
@@ -112,7 +112,7 @@ export async function importRulesFromBridge(
   let conflicts = 0;
 
   for (const pr of personaRules) {
-    // Check if a matching przm Memory rule exists (word overlap)
+    // Check if a matching Nomad Memory rule exists (word overlap)
     const matchIdx = findMatchingRule(pr.rule, existing);
 
     if (matchIdx >= 0) {

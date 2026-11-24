@@ -41,7 +41,7 @@ describe('retrieval metrics', () => {
 
 describe('streamJsonArray', () => {
   it('yields each entry across read boundaries, braces and escapes inside strings included', async () => {
-    const dir = mkdtempSync(join(tmpdir(), 'przm-stream-'));
+    const dir = mkdtempSync(join(tmpdir(), 'nomad-stream-'));
     try {
       const entries = [{ a: 'x { y } [z]', b: [1, { c: 'q"uote\\' }] }, { a: '', b: [] }, { a: 'ünï', b: [[2]] }, { a: `${'é'.repeat(3_000_000)}{"[`, b: [] }, { a: 'after the 4 MB read boundary', b: [3] }];
       const path = join(dir, 'a.json');

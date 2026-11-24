@@ -3,10 +3,10 @@
 A chat product built its own memory on Postgres, starting from ideas ported out of this repo
 (query signals, IDF keyword weighting, the poisoning and contradiction checks, the
 consolidation prompts). Running it in production taught things this repo can use back. This
-plan takes each idea on its merits for przm-memory's design, a local-first MCP server on
+plan takes each idea on its merits for nomad-memory's design, a local-first MCP server on
 LanceDB, and says what ships and what doesn't.
 
-For each idea: does przm-memory already do it, would it help here, what it should do to the
+For each idea: does nomad-memory already do it, would it help here, what it should do to the
 benchmarks, the risk, and the effort (S under a day, M a few days, L a week or more).
 
 ## The debt we were told about, checked
@@ -59,8 +59,8 @@ here, because a triple's `validFrom` is always "now". It becomes live the day ca
 | Idea | Already? | Helps? | Bench effect | Risk | Effort |
 |---|---|---|---|---|---|
 | Candidates capped in the query | Vector: yes. Keyword: no, every match enters fusion. | No: capped at 50, LongMemEval came out identical to the last digit, and the full scan that costs the time still runs. | None (measured). | Low. | S; not shipped |
-| Multiplicative boosts after RRF (`score × (1 + boost)`) | No. Boosts are added at a tenth of their size (`bonusScale = 0.1`), which the deployment found still lets them decide the order on their own: an entity boost (+0.05) outweighs the whole vector rank range. | Not on this pipeline: R@10 fell. przm-memory's boosts were tuned additively, so the swap moves temporal-reasoning questions out of the top 10. | LongMemEval R@10 99.0% to 98.4% (measured). | Fails the recall rule. | S; reverted |
-| Time-window fallback when a window finds nothing | Not needed. przm-memory's time window only adds candidates from the period; it never filters. A misread year can't hide everything. | No. | None. | None. | None |
+| Multiplicative boosts after RRF (`score × (1 + boost)`) | No. Boosts are added at a tenth of their size (`bonusScale = 0.1`), which the deployment found still lets them decide the order on their own: an entity boost (+0.05) outweighs the whole vector rank range. | Not on this pipeline: R@10 fell. nomad-memory's boosts were tuned additively, so the swap moves temporal-reasoning questions out of the top 10. | LongMemEval R@10 99.0% to 98.4% (measured). | Fails the recall rule. | S; reverted |
+| Time-window fallback when a window finds nothing | Not needed. nomad-memory's time window only adds candidates from the period; it never filters. A misread year can't hide everything. | No. | None. | None. | None |
 | IDF term weighting and a vector-similarity floor | Yes. These came from this repo in the first place. The floor is model-profiled and guarded by `tests/alien-query-floor.test.ts`. | No change. | None. | None. | None |
 
 ### Model choice
@@ -89,7 +89,7 @@ here, because a triple's `validFrom` is always "now". It becomes live the day ca
 2. **Secrets never stored.** A redaction pass at ingest replaces credential shapes (private key
    blocks, provider key prefixes, bearer tokens, JWTs, `password=` style assignments) with
    `[REDACTED]`. Extraction drops a candidate outright when it would have held one.
-   `PRZM_MEMORY_REDACT_SECRETS=0` turns it off.
+   `NOMAD_MEMORY_REDACT_SECRETS=0` turns it off.
 3. **Extraction cites its sources.** The LLM prompt numbers the messages and requires
    `source` on each memory. Candidates citing no message, a number outside the batch, or only
    assistant messages are dropped. The prompt gains the hard rules (only what the messages
@@ -103,11 +103,11 @@ here, because a triple's `validFrom` is always "now". It becomes live the day ca
    `memory-maintain` answers `maintenance_running` when another process holds it.
 5. **Embedding catch-up.** Maintenance embeds up to 500 chunks a run that have no vector, and
    reports how many.
-6. **Provider-agnostic LLM settings.** `PRZM_MEMORY_LLM_BASE_URL`, `PRZM_MEMORY_LLM_API_KEY`
-   and `PRZM_MEMORY_LLM_MODEL`, with every old name still read. `isLlmAvailable()` agrees with
+6. **Provider-agnostic LLM settings.** `NOMAD_MEMORY_LLM_BASE_URL`, `NOMAD_MEMORY_LLM_API_KEY`
+   and `NOMAD_MEMORY_LLM_MODEL`, with every old name still read. `isLlmAvailable()` agrees with
    the client.
-7. **A writable model cache.** `PRZM_MEMORY_MODEL_DIR` sets it. Without it the library default
-   is kept when writable, else `~/.cache/przm-memory/models`. The boot log prints the real
+7. **A writable model cache.** `NOMAD_MEMORY_MODEL_DIR` sets it. Without it the library default
+   is kept when writable, else `~/.cache/nomad-memory/models`. The boot log prints the real
    path.
 8. **Two retrieval experiments**, each kept only if R@5 and R@10 hold on LongMemEval:
    multiplicative boosts, and a keyword candidate cap. Neither shipped (results below); the

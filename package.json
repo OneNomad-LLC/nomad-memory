@@ -1,8 +1,8 @@
 {
-  "name": "@onenomad/przm-memory",
+  "name": "@onenomad/nomad-memory",
   "version": "1.6.0",
-  "mcpName": "io.github.onenomad-llc/przm-memory",
-  "description": "przm Memory — local-first memory MCP server for AI agents. Part of the przm AI reliability suite. LLM-powered extraction, hybrid ANN search, tier lifecycle, spreading activation, procedural rules, real-time ingest, and session-state.",
+  "mcpName": "io.github.onenomad-llc/nomad-memory",
+  "description": "Nomad Memory — local-first memory MCP server for AI agents. LLM-powered extraction, hybrid ANN search, tier lifecycle, spreading activation, procedural rules, real-time ingest, and session-state.",
   "type": "module",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -15,6 +15,9 @@
     "./cli": "./dist/cli.js"
   },
   "bin": {
+    "nomad-memory": "dist/server.js",
+    "nomad-memory-mcp": "dist/cli.js",
+    "nomad-memory-migrate": "dist/migrate.js",
     "przm-memory": "dist/server.js",
     "przm-memory-mcp": "dist/cli.js",
     "przm-memory-migrate": "dist/migrate.js"
@@ -29,9 +32,9 @@
   ],
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/OneNomad-LLC/przm-memory.git"
+    "url": "git+https://github.com/OneNomad-LLC/nomad-memory.git"
   },
-  "homepage": "https://github.com/OneNomad-LLC/przm-memory",
+  "homepage": "https://github.com/OneNomad-LLC/nomad-memory",
   "license": "Apache-2.0",
   "engines": {
     "node": ">=22.0.0"

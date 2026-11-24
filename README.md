@@ -1,11 +1,11 @@
-# przm Memory <sub>(engram)</sub>
+# Nomad Memory <sub>(engram)</sub>
 
 [![przm: Memory](https://img.shields.io/badge/przm-Memory-E84040?style=flat-square&labelColor=1a1a1a)](https://przm.sh)
 [![License](https://img.shields.io/badge/license-Apache--2.0-blue?style=flat-square&labelColor=1a1a1a)](LICENSE)
 
-The memory surface of [przm](https://przm.sh), OneNomad's AI reliability suite. Project codename: `engram`. The GitHub repo is now [`OneNomad-LLC/przm-memory`](https://github.com/OneNomad-LLC/przm-memory) (old URLs redirect); the npm package publishes as `@onenomad/przm-memory` at v1.0. Until then, install from source.
+The memory surface of [przm](https://przm.sh), OneNomad's AI reliability suite. Project codename: `engram`. The GitHub repo is now [`OneNomad-LLC/nomad-memory`](https://github.com/OneNomad-LLC/nomad-memory) (old URLs redirect); the npm package publishes as `@onenomad/nomad-memory` at v1.0. Until then, install from source.
 
-A memory system for AI agents. LLMs can't remember anything between conversations by default, and the existing solutions are either too simple (just dump everything in a vector DB) or too expensive (send your entire history to an API every time). przm Memory sits in the middle. It runs locally and doesn't need an API key for basic operation. On LongMemEval S it puts every evidence session in its top 10 for 93.6% of questions, with no API key; on the much larger LongMemEval M haystacks and on BEAM's long multi-domain chats it does markedly worse, and the [benchmark results](#benchmark-results) show both.
+A memory system for AI agents. LLMs can't remember anything between conversations by default, and the existing solutions are either too simple (just dump everything in a vector DB) or too expensive (send your entire history to an API every time). Nomad Memory sits in the middle. It runs locally and doesn't need an API key for basic operation. On LongMemEval S it puts every evidence session in its top 10 for 93.6% of questions, with no API key; on the much larger LongMemEval M haystacks and on BEAM's long multi-domain chats it does markedly worse, and the [benchmark results](#benchmark-results) show both.
 
 The core idea is that memory shouldn't just be "find similar text." When someone asks "where was I working last March?" the system needs to actually reason about time, not just pattern match on the word "March." So the search pipeline combines vector similarity, keyword matching with IDF weighting, temporal inference, a knowledge graph, and spreading activation over a memory graph. Each piece handles a different kind of recall that the others miss.
 
@@ -27,7 +27,7 @@ The core idea is that memory shouldn't just be "find similar text." When someone
 
 ## Benchmark Results
 
-Retrieval only: did przm-memory's search put the evidence in its top 10? No model in the loop,
+Retrieval only: did nomad-memory's search put the evidence in its top 10? No model in the loop,
 no API key, no reranker. This is not QA accuracy (whether a model then answers correctly); the
 harness for that exists but hasn't been run with a grader yet. Methodology, subsets and
 caveats: [BENCHMARKS.md](BENCHMARKS.md). Result files: [`benchmarks/results/published/`](benchmarks/results/published).
@@ -188,8 +188,8 @@ Without an LLM key, extraction is a directive gate rather than a keyword match. 
 The table is meant to be a function of the chunks and the extractor, so when the extractor changes the table can be re-derived rather than hand-pruned:
 
 ```
-przm-memory-mcp rules list [--scope <slug>]
-przm-memory-mcp rules rebuild
+nomad-memory-mcp rules list [--scope <slug>]
+nomad-memory-mcp rules rebuild
 ```
 
 `rebuild` deletes every rule, clears the one-shot backfill marker, and replays the correction and preference chunks grouped by project so each rule takes the scope of the memory it came from. When a memory carries no domain but its label names a project the store already knows ("Stave-admin workflow rule:"), the rule is scoped from the label, and that label carries forward to the memory's later sentences. A rule's starting confidence is seeded from the importance of the memory it came from, so a rule from a 0.95 correction starts above one from a passing note rather than every rule sitting level at 0.5; old memories have decayed, so the session-start display floor is 0.35 rather than 0.5.
@@ -198,9 +198,9 @@ Known gap: the chunker splits long memories at sentence boundaries with the same
 
 ### Repairs and history
 
-`przm-memory-mcp grade --all` grades every Claude Code transcript on the machine and records the outcomes, so a store that predates inferred outcomes gets its history back. On this machine: 210 transcripts, 158 searches, 513 helpful and 745 irrelevant chunk outcomes, four minutes, no parser failures.
+`nomad-memory-mcp grade --all` grades every Claude Code transcript on the machine and records the outcomes, so a store that predates inferred outcomes gets its history back. On this machine: 210 transcripts, 158 searches, 513 helpful and 745 irrelevant chunk outcomes, four minutes, no parser failures.
 
-`przm-memory-mcp repair [--dry-run]` fixes three things the measurements found. A long memory is stored as a whole parent plus child pieces, and the chunker used to cut those pieces at "(e.g." or inside a backticked command with the same naive rule the extractor had; the parent always held the whole text, so nothing was lost, but the cut pieces were noise. `repair` re-ingests such memories from their whole text through the normal path, embedded fresh and re-pieced with the fixed splitter. Derived consolidation summaries that the old heuristic cut mid-word ("Careers and Oil Ch") are trimmed to their last whole sentence, or deleted when none remains. And corrections and preferences the user stated explicitly are lifted to the instruction floor the consolidator now keeps them at: a rule the user set does not become less true with age, and 314 of them had decayed to 0.15 and were losing retrieval to passing notes.
+`nomad-memory-mcp repair [--dry-run]` fixes three things the measurements found. A long memory is stored as a whole parent plus child pieces, and the chunker used to cut those pieces at "(e.g." or inside a backticked command with the same naive rule the extractor had; the parent always held the whole text, so nothing was lost, but the cut pieces were noise. `repair` re-ingests such memories from their whole text through the normal path, embedded fresh and re-pieced with the fixed splitter. Derived consolidation summaries that the old heuristic cut mid-word ("Careers and Oil Ch") are trimmed to their last whole sentence, or deleted when none remains. And corrections and preferences the user stated explicitly are lifted to the instruction floor the consolidator now keeps them at: a rule the user set does not become less true with age, and 314 of them had decayed to 0.15 and were losing retrieval to passing notes.
 
 A long memory is stored whole as a parent and again as child pieces, and the pieces are what retrieval finds. On a golden set of 24 paraphrased questions against this store, with a hit counted on the target, its parent or a sibling piece, recall at 5 was 0.79 with pieces and 0.33 with parents alone; raising the split threshold was tried and reverted for that reason. After the repairs, the instruction floor and the outcome backfill, the same questions on a fresh copy scored recall at 1 0.50, at 5 0.83, at 10 0.92, mean reciprocal rank 0.64, up from 0.42, 0.79, 0.88 and 0.58.
 
@@ -208,7 +208,7 @@ A long memory is stored whole as a parent and again as child pieces, and the pie
 
 Rules and handoffs only helped when the agent remembered to ask for them, and measured over a day it did not: a rule written at importance 0.95 in the morning was never queried that afternoon, and the mistake it described was made again. So the store pushes instead of waiting to be pulled.
 
-The `SessionStart` hook runs `przm-memory-mcp context` and Claude Code adds its output to the session before the first message. Four sections, each capped and the whole capped at about 10k characters: the latest handoff or the crash checkpoint if that is newer, the standing procedural rules by confidence, the corrections and preferences with high importance, and memories whose domain matches the working directory's name. No LLM. If the store is unreachable it prints nothing, because a memory problem must never block a session.
+The `SessionStart` hook runs `nomad-memory-mcp context` and Claude Code adds its output to the session before the first message. Four sections, each capped and the whole capped at about 10k characters: the latest handoff or the crash checkpoint if that is newer, the standing procedural rules by confidence, the corrections and preferences with high importance, and memories whose domain matches the working directory's name. No LLM. If the store is unreachable it prints nothing, because a memory problem must never block a session.
 
 ### Recall Outcomes
 
@@ -231,7 +231,7 @@ Two limits, stated plainly. It never infers **corrected**, because a substring c
 Run it by hand to see what it would do:
 
 ```
-przm-memory-mcp grade --transcript ~/.claude/projects/<project>/<session>.jsonl --session <id> --final --dry-run
+nomad-memory-mcp grade --transcript ~/.claude/projects/<project>/<session>.jsonl --session <id> --final --dry-run
 ```
 
 ### Knowledge Graph Auto-Population
@@ -264,7 +264,7 @@ During consolidation, the system also scans for near-duplicates using cosine sim
 
 ### Handoff Protocol
 
-Context compaction is irreversible, and if the window fills completely before compaction runs the user has to abandon the chat. przm Memory treats this as a first-class failure mode and ships three tools that mechanize the fix:
+Context compaction is irreversible, and if the window fills completely before compaction runs the user has to abandon the chat. Nomad Memory treats this as a first-class failure mode and ships three tools that mechanize the fix:
 
 - `engram-handoff-write` persists a structured "where we left off" snapshot to `handoffs/YYYY-MM-DD_HH-MM-SS.{json,md}` — currentTask, completed, nextSteps, openQuestions, file references, decisions, and free-form notes. The JSON half is for programmatic resume; the markdown half is for humans.
 - `engram-handoff-read` loads the latest handoff (or a specific one by stamp). Agents call it at session start to pick up from exactly where the previous session stopped.
@@ -276,13 +276,13 @@ The bundled `engram_precompact_hook.sh` runs autonomously before compaction: it 
 
 One machine can run Claude Code under more than one config directory, a personal `~/.claude` and a work `~/.claude-work` for example, and all of those sessions share one store. Before 1.6.0 they also shared one crash checkpoint and one "latest handoff", so a work session could open on a personal session's work and the other way round.
 
-A session's lane is the name of its config directory: `~/.claude` is `claude`, `~/.claude-work` is `claude-work`, and `PRZM_MEMORY_LANE` overrides it. Handoffs record the lane and project (working directory name) they were written in. Session start, `memory-handoff-read`, `memory-handoff-list` and the pre-compact hook only see the session's own lane, preferring the current project; pass `lane` or `all` to look elsewhere. Handoffs written before 1.6.0 carry no lane and are left out. The stop hook keeps one checkpoint per session under `handoffs/checkpoints/` instead of one shared file.
+A session's lane is the name of its config directory: `~/.claude` is `claude`, `~/.claude-work` is `claude-work`, and `NOMAD_MEMORY_LANE` overrides it. Handoffs record the lane and project (working directory name) they were written in. Session start, `memory-handoff-read`, `memory-handoff-list` and the pre-compact hook only see the session's own lane, preferring the current project; pass `lane` or `all` to look elsewhere. Handoffs written before 1.6.0 carry no lane and are left out. The stop hook keeps one checkpoint per session under `handoffs/checkpoints/` instead of one shared file.
 
-A handoff can also be sent to another lane. `memory-handoff-write` with `to: "claude-work"` (or `przm-memory-mcp handoff send --to claude-work --task "..."` from a shell) puts it in that lane's inbox instead of saving it as the sender's resume note. Sessions in that lane see it at session start and, with the user-prompt hook installed, on their next prompt if it arrives mid-session. Each session is told about a handoff once. The session is told to treat it as a request and confirm with the user before acting; `memory-handoff-inbox` lists pending ones and `memory-handoff-ack` marks one picked up. Messages land at a turn boundary: nothing wakes an idle session.
+A handoff can also be sent to another lane. `memory-handoff-write` with `to: "claude-work"` (or `nomad-memory-mcp handoff send --to claude-work --task "..."` from a shell) puts it in that lane's inbox instead of saving it as the sender's resume note. Sessions in that lane see it at session start and, with the user-prompt hook installed, on their next prompt if it arrives mid-session. Each session is told about a handoff once. The session is told to treat it as a request and confirm with the user before acting; `memory-handoff-inbox` lists pending ones and `memory-handoff-ack` marks one picked up. Messages land at a turn boundary: nothing wakes an idle session.
 
 #### Installing the hooks
 
-przm Memory ships five optional Claude Code hooks, all bash:
+Nomad Memory ships five optional Claude Code hooks, all bash:
 
 - `hooks/engram_sessionstart_hook.sh` (SessionStart): prints the inbox, the latest handoff or checkpoint from the lane, rules, corrections and project memories
 - `hooks/engram_userprompt_hook.sh` (UserPromptSubmit): announces handoffs addressed to the lane that arrived since the session was last told
@@ -296,19 +296,19 @@ Wire them in `~/.claude/settings.json` (or your project's `.claude/settings.json
 {
   "hooks": {
     "SessionStart": [
-      { "hooks": [{ "type": "command", "command": "bash /absolute/path/to/przm-memory/hooks/engram_sessionstart_hook.sh" }] }
+      { "hooks": [{ "type": "command", "command": "bash /absolute/path/to/nomad-memory/hooks/engram_sessionstart_hook.sh" }] }
     ],
     "UserPromptSubmit": [
-      { "hooks": [{ "type": "command", "command": "bash /absolute/path/to/przm-memory/hooks/engram_userprompt_hook.sh" }] }
+      { "hooks": [{ "type": "command", "command": "bash /absolute/path/to/nomad-memory/hooks/engram_userprompt_hook.sh" }] }
     ],
     "Stop": [
-      { "hooks": [{ "type": "command", "command": "bash /absolute/path/to/przm-memory/hooks/engram_stop_hook.sh" }] }
+      { "hooks": [{ "type": "command", "command": "bash /absolute/path/to/nomad-memory/hooks/engram_stop_hook.sh" }] }
     ],
     "PreCompact": [
-      { "hooks": [{ "type": "command", "command": "bash /absolute/path/to/przm-memory/hooks/engram_precompact_hook.sh" }] }
+      { "hooks": [{ "type": "command", "command": "bash /absolute/path/to/nomad-memory/hooks/engram_precompact_hook.sh" }] }
     ],
     "SessionEnd": [
-      { "hooks": [{ "type": "command", "command": "bash /absolute/path/to/przm-memory/hooks/engram_sessionend_hook.sh" }] }
+      { "hooks": [{ "type": "command", "command": "bash /absolute/path/to/nomad-memory/hooks/engram_sessionend_hook.sh" }] }
     ]
   }
 }
@@ -320,7 +320,7 @@ The hooks are optional. The MCP tools work without them. The hooks just make the
 
 ## Compatibility
 
-przm Memory is an MCP (Model Context Protocol) server. It works with any client that supports the MCP standard. That includes:
+Nomad Memory is an MCP (Model Context Protocol) server. It works with any client that supports the MCP standard. That includes:
 
 - **Claude Code** (Anthropic's CLI and desktop app)
 - **Claude.ai** (via MCP server configuration)
@@ -330,16 +330,16 @@ przm Memory is an MCP (Model Context Protocol) server. It works with any client 
 - **Continue** (VS Code / JetBrains extension)
 - **Any MCP-compatible client** (the protocol is open and standardized)
 
-If your tool can connect to an MCP server over stdio, przm Memory will work with it.
+If your tool can connect to an MCP server over stdio, Nomad Memory will work with it.
 
 ## Installation
 
-> **Heads up — `@onenomad/przm-memory` publishes at v1.0.** The package isn't on npm yet. Until v1.0 lands, install from source (see [Source](#source) below). The `npx @onenomad/przm-memory` commands shown in this section will work after the v1.0 publish; nothing else changes about the install steps.
+> **Heads up — `@onenomad/nomad-memory` publishes at v1.0.** The package isn't on npm yet. Until v1.0 lands, install from source (see [Source](#source) below). The `npx @onenomad/nomad-memory` commands shown in this section will work after the v1.0 publish; nothing else changes about the install steps.
 
 ### Claude Code
 
 ```bash
-claude mcp add engram -- npx @onenomad/przm-memory
+claude mcp add engram -- npx @onenomad/nomad-memory
 ```
 
 ### Claude Desktop
@@ -351,7 +351,7 @@ Add to your Claude Desktop config file. On macOS it's at `~/Library/Application 
   "mcpServers": {
     "engram": {
       "command": "npx",
-      "args": ["@onenomad/przm-memory"]
+      "args": ["@onenomad/nomad-memory"]
     }
   }
 }
@@ -368,7 +368,7 @@ Add to your client's MCP config:
   "mcpServers": {
     "engram": {
       "command": "npx",
-      "args": ["@onenomad/przm-memory"]
+      "args": ["@onenomad/nomad-memory"]
     }
   }
 }
@@ -377,8 +377,8 @@ Add to your client's MCP config:
 ### From Source
 
 ```bash
-git clone https://github.com/OneNomad-LLC/przm-memory.git
-cd przm-memory
+git clone https://github.com/OneNomad-LLC/nomad-memory.git
+cd nomad-memory
 npm install
 npm run build
 ```
@@ -402,21 +402,21 @@ Then point your MCP client at `dist/server.js`:
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `PRZM_MEMORY_LLM_BASE_URL` | OpenRouter | Any OpenAI-compatible endpoint for LLM features: a local Ollama, LM Studio or vLLM server (no key needed), a provider's own OpenAI-compatible API, or a proxy. Legacy `ENGRAM_LLM_BASE_URL` also honored. |
-| `PRZM_MEMORY_LLM_API_KEY` | (none) | Key for that endpoint. `OPENROUTER_API_KEY` also works. With neither a key nor a custom endpoint, the system uses heuristic extraction and keyword/vector search only. |
+| `NOMAD_MEMORY_LLM_BASE_URL` | OpenRouter | Any OpenAI-compatible endpoint for LLM features: a local Ollama, LM Studio or vLLM server (no key needed), a provider's own OpenAI-compatible API, or a proxy. Legacy `ENGRAM_LLM_BASE_URL` also honored. |
+| `NOMAD_MEMORY_LLM_API_KEY` | (none) | Key for that endpoint. `OPENROUTER_API_KEY` also works. With neither a key nor a custom endpoint, the system uses heuristic extraction and keyword/vector search only. |
 | `MEM0_API_KEY` | (none) | Enables Mem0 cloud extraction as a second opinion |
 | `ENGRAM_DATA_DIR` | `~/.claude/engram` | Where data gets stored |
-| `PRZM_MEMORY_EMBEDDING_MODEL` | `Xenova/bge-small-en-v1.5` | HuggingFace model for embeddings (legacy `ENGRAM_EMBEDDING_MODEL` also honored). After changing it, run `przm-memory-mcp reembed` — stored vectors stay in the old model's space until re-embedded, and the server warns at boot when they mismatch. |
-| `PRZM_MEMORY_AUTO_MAINTAIN` | `1` | Set `0` to disable the automatic consolidation pass (runs ~20s after boot when the last run is older than the interval). One pass runs at a time across every session sharing the data directory (`maintenance.lock`). |
-| `PRZM_MEMORY_MAINTAIN_INTERVAL_HOURS` | `24` | Minimum hours between automatic consolidation passes. |
-| `PRZM_MEMORY_REDACT_SECRETS` | `1` | Set `0` to store text without redacting credentials (see [Secrets](#secrets)). |
+| `NOMAD_MEMORY_EMBEDDING_MODEL` | `Xenova/bge-small-en-v1.5` | HuggingFace model for embeddings (legacy `ENGRAM_EMBEDDING_MODEL` also honored). After changing it, run `nomad-memory-mcp reembed` — stored vectors stay in the old model's space until re-embedded, and the server warns at boot when they mismatch. |
+| `NOMAD_MEMORY_AUTO_MAINTAIN` | `1` | Set `0` to disable the automatic consolidation pass (runs ~20s after boot when the last run is older than the interval). One pass runs at a time across every session sharing the data directory (`maintenance.lock`). |
+| `NOMAD_MEMORY_MAINTAIN_INTERVAL_HOURS` | `24` | Minimum hours between automatic consolidation passes. |
+| `NOMAD_MEMORY_REDACT_SECRETS` | `1` | Set `0` to store text without redacting credentials (see [Secrets](#secrets)). |
 | `ENGRAM_DEVICE` | `cpu` | Embedding device: `cpu`, `dml` (DirectML), or `cuda` |
-| `PRZM_MEMORY_LLM_MODEL` | `anthropic/claude-haiku-4.5` | Model for LLM features, in the endpoint's naming (any model on [openrouter.ai](https://openrouter.ai) by default). Legacy `ENGRAM_MODEL` also honored. |
-| `PRZM_MEMORY_MODEL_DIR` | library default | Where the embedding model is cached. Without it the library's cache inside `node_modules` is used while writable, else `~/.cache/przm-memory/models`. The boot log prints the path in use. |
+| `NOMAD_MEMORY_LLM_MODEL` | `anthropic/claude-haiku-4.5` | Model for LLM features, in the endpoint's naming (any model on [openrouter.ai](https://openrouter.ai) by default). Legacy `ENGRAM_MODEL` also honored. |
+| `NOMAD_MEMORY_MODEL_DIR` | library default | Where the embedding model is cached. Without it the library's cache inside `node_modules` is used while writable, else `~/.cache/nomad-memory/models`. The boot log prints the path in use. |
 | `STORAGE_BACKEND` | `file` | Storage backend: `file` (LanceDB + filesystem, default), `postgres` (self-hosted multi-tenant), or `cloud` (przm Cloud Pro). See below. |
 | `DATABASE_URL` | (none) | Postgres connection string. Required when `STORAGE_BACKEND=postgres`. |
 | `TENANT_ID` | (none) | Tenant identifier — every row in postgres is scoped by this. Required when `STORAGE_BACKEND=postgres`. |
-| `PYRE_API_URL` | (none) | przm server URL for `przm-memory login`. Alternative to the positional arg or `--server` flag — one of the three is required. |
+| `PYRE_API_URL` | (none) | przm server URL for `nomad-memory login`. Alternative to the positional arg or `--server` flag — one of the three is required. |
 | `PYRE_API_KEY` | (none) | przm Cloud API key. Overrides the field from `~/.pyre/credentials.json` when set. |
 | `PYRE_CREDENTIALS_FILE` | `~/.pyre/credentials.json` | Override the credentials-file path (CI / headless installs). |
 | `ENGRAM_NO_AUTO_CLOUD` | (unset) | Truthy (`1`/`true`/`yes`/`on`) suppresses the credentials-file probe so `~/.pyre/credentials.json` is ignored even when present. Use for benchmarks, CI, or anywhere you want to guarantee local file mode without deleting the file. Explicit `STORAGE_BACKEND` always wins. |
@@ -426,22 +426,22 @@ Then point your MCP client at `dist/server.js`:
 For przm Cloud Pro users:
 
 ```bash
-npm install -g @onenomad/przm-memory
-przm-memory login https://przm.sh
+npm install -g @onenomad/nomad-memory
+nomad-memory login https://przm.sh
 ```
 
 `login` requires the przm server URL. The binary ships with no hardcoded default — you point at whichever przm instance you're using (prod, staging, your own deployment). Three equivalent ways to supply it:
 
 ```bash
-przm-memory login https://przm.sh          # positional argument
-przm-memory login --server https://przm.sh # flag
-PYRE_API_URL=https://przm.sh przm-memory login   # env var
+nomad-memory login https://przm.sh          # positional argument
+nomad-memory login --server https://przm.sh # flag
+PYRE_API_URL=https://przm.sh nomad-memory login   # env var
 ```
 
-`login` opens that URL in your browser, shows you a one-time pairing code, and waits for you to approve the device. On approval it writes `~/.pyre/credentials.json` (mode 0600) using the canonical `api_url` from the server's response — which may differ from the login URL you typed if the server normalises or redirects. From that point on przm Memory automatically routes through your cloud instance. Local data stays local; nothing changes for users who don't run `login`.
+`login` opens that URL in your browser, shows you a one-time pairing code, and waits for you to approve the device. On approval it writes `~/.pyre/credentials.json` (mode 0600) using the canonical `api_url` from the server's response — which may differ from the login URL you typed if the server normalises or redirects. From that point on Nomad Memory automatically routes through your cloud instance. Local data stays local; nothing changes for users who don't run `login`.
 
 ```
-$ przm-memory login https://przm.sh
+$ nomad-memory login https://przm.sh
 Open this URL in your browser to authorize:
 
   https://przm.sh/connect
@@ -454,7 +454,7 @@ Logged in. Credentials saved to ~/.pyre/credentials.json.
 To sign out:
 
 ```bash
-przm-memory logout
+nomad-memory logout
 ```
 
 This deletes `~/.pyre/credentials.json` and reverts to local file mode on the next run. Idempotent — running it when you're already logged out exits 0.
@@ -473,7 +473,7 @@ export PYRE_API_URL=https://przm.sh
 export PYRE_API_KEY=sk_pyre_xxx
 ```
 
-When `STORAGE_BACKEND` is unset, przm Memory probes for `~/.pyre/credentials.json` and uses cloud mode if it finds one. Explicit env vars always win. The routing decision is logged to stderr on startup (`przm-memory: storage=cloud (auto-routed via ~/.pyre/credentials.json) · apiUrl=…`) so it's never silent — if you see a benchmark or local script hitting the wire when you expected local mode, that log line is the first place to look.
+When `STORAGE_BACKEND` is unset, Nomad Memory probes for `~/.pyre/credentials.json` and uses cloud mode if it finds one. Explicit env vars always win. The routing decision is logged to stderr on startup (`nomad-memory: storage=cloud (auto-routed via ~/.pyre/credentials.json) · apiUrl=…`) so it's never silent — if you see a benchmark or local script hitting the wire when you expected local mode, that log line is the first place to look.
 
 To force local file mode without deleting your credentials file (benchmarks, CI, local-only test runs against a real login), set `ENGRAM_NO_AUTO_CLOUD=1`. The probe is skipped, the credentials file is left alone, and the routing log line names the opt-out so it's visible to whoever inherits the environment.
 
@@ -481,7 +481,7 @@ The existing `STORAGE_BACKEND=postgres` self-host path (below) is unaffected —
 
 ### Cloud / multi-tenant mode
 
-By default przm Memory stores everything locally under `ENGRAM_DATA_DIR` (LanceDB tables for chunks/daily_logs/rules/knowledge_triples, plus markdown files for diary and handoffs). For a single user on a single machine this is the right answer — fast, offline, zero dependencies.
+By default Nomad Memory stores everything locally under `ENGRAM_DATA_DIR` (LanceDB tables for chunks/daily_logs/rules/knowledge_triples, plus markdown files for diary and handoffs). For a single user on a single machine this is the right answer — fast, offline, zero dependencies.
 
 For shared/cloud deployments where many users share one process, it also speaks postgres with [pgvector](https://github.com/pgvector/pgvector).
 
@@ -508,12 +508,12 @@ For shared/cloud deployments where many users share one process, it also speaks 
 
    This creates the six tables (`chunks`, `daily_logs`, `rules`, `knowledge_triples`, `diary_entries`, `handoffs`), enables the `vector` extension, and adds the hot-path indexes (per-tenant created_at, ivfflat on chunks.embedding, etc.). The runner is idempotent — re-running is a no-op for already-applied files.
 
-5. Boot przm Memory normally. Every query is scoped by `TENANT_ID`; switching tenants is just a different env var on a different process.
+5. Boot Nomad Memory normally. Every query is scoped by `TENANT_ID`; switching tenants is just a different env var on a different process.
 
 **Notes**
 
 - pgvector required (`CREATE EXTENSION vector;`). The migration runs this for you when your DB role has the privileges; otherwise create it manually first.
-- Embedding dimension is 384 by default (matches the local `Xenova/bge-small-en-v1.5` model). If you change `PRZM_MEMORY_EMBEDDING_MODEL` to one with a different dimensionality, edit `migrations/postgres/001_init.sql` before running migrations.
+- Embedding dimension is 384 by default (matches the local `Xenova/bge-small-en-v1.5` model). If you change `NOMAD_MEMORY_EMBEDDING_MODEL` to one with a different dimensionality, edit `migrations/postgres/001_init.sql` before running migrations.
 - Local file mode and postgres mode are **not** wire-compatible — there's no auto-import. If you're migrating an existing local install to the cloud, re-ingest is the path. Diary and handoffs in particular store different on-disk formats (markdown files vs. jsonb rows).
 - Single user, single machine: stay on `file`. The postgres path exists for the hosted przm deployment and similar shared infra.
 
@@ -521,7 +521,7 @@ For shared/cloud deployments where many users share one process, it also speaks 
 
 The MCP server exposes 31 tools across six groups. Several earlier tools (`engram-format`, `engram-check-duplicate`, `engram-extract-rules`, `engram-taxonomy`, `engram-kg-stats`) were folded into their parent tools in 1.0.0-beta.6 — pass the relevant flag or mode to the parent instead. 1.0.0-beta.8 added the Handoff tools for cross-session continuity. 1.0.0 adds the memory origin field (user vs derived), the scratch tier, and `memory-scratch-promote`.
 
-> **Backward compatibility:** tools were renamed from `engram-*` to `memory-*` in v1.0.0-beta.7. As of 1.3.0 the `engram-*` aliases are opt-in: set `PRZM_MEMORY_LEGACY_ALIASES=1` to register them. They double the tool surface every MCP client pays for, so leave them off unless an old config still calls `engram-*` names. They will be removed in v2.
+> **Backward compatibility:** tools were renamed from `engram-*` to `memory-*` in v1.0.0-beta.7. As of 1.3.0 the `engram-*` aliases are opt-in: set `NOMAD_MEMORY_LEGACY_ALIASES=1` to register them. They double the tool surface every MCP client pays for, so leave them off unless an old config still calls `engram-*` names. They will be removed in v2.
 
 ### Core Memory
 
@@ -531,7 +531,7 @@ The MCP server exposes 31 tools across six groups. Several earlier tools (`engra
 | `memory-ingest` | Write-ahead log: immediately persist a memory before responding. Runs duplicate detection inline (replaces `engram-check-duplicate`). Defaults `origin='user'` since explicit ingest is user-asserted; pass `tier: 'scratch'` for session-only notes. |
 | `memory-scratch-promote` | Graduate a scratch-tier memory to short-term so it survives the 24h auto-purge and enters the normal consolidation lifecycle. |
 | `memory-extract` | Extract memories from a conversation (LLM or heuristic). Rules-only mode replaces the old `engram-extract-rules`. |
-| `memory-maintain` | Run consolidation (decay, promote, link, merge, self-organize). Auto-describes unnamed memories, generates cross-links, and syncs the Persona procedural bridge when both servers are running. Also runs automatically: the server schedules a pass ~20s after boot whenever the last run is older than `PRZM_MEMORY_MAINTAIN_INTERVAL_HOURS` (default 24h). |
+| `memory-maintain` | Run consolidation (decay, promote, link, merge, self-organize). Auto-describes unnamed memories, generates cross-links, and syncs the Persona procedural bridge when both servers are running. Also runs automatically: the server schedules a pass ~20s after boot whenever the last run is older than `NOMAD_MEMORY_MAINTAIN_INTERVAL_HOURS` (default 24h). |
 | `memory-rules` | Show active procedural rules |
 | `memory-outcome` | Record recall feedback (helpful/corrected/irrelevant) |
 | `memory-session` | Manage session state (hot RAM scratchpad) |
@@ -583,7 +583,7 @@ These work in any MCP-compatible client (Claude Code, Cursor, etc.). `/onboard` 
 | Command | What it does |
 |---------|-------------|
 | `/onboard` | **Fresh-install setup.** Interviews you for your durable rules and preferences (identity/attribution, emails, communication style, code + workflow conventions, hard rules, project scoping) and stores each as a procedural memory that persists and auto-loads every session — syncing into tone too when przm-voice is connected. Built in as an MCP prompt, so it needs no install and appears automatically once the server is connected. Re-run anytime to add more. |
-| `/memory-source <engram\|off\|hybrid>` | Switch memory backend. "engram" uses przm Memory exclusively, "off" disables all persistent memory, "hybrid" runs przm Memory alongside native client memory. |
+| `/memory-source <engram\|off\|hybrid>` | Switch memory backend. "engram" uses Nomad Memory exclusively, "off" disables all persistent memory, "hybrid" runs Nomad Memory alongside native client memory. |
 | `/recall <query>` | Search memories using the full hybrid pipeline (vector + keyword + temporal + KG + spreading activation). Results presented conversationally. |
 | `/forget <what>` | Find and remove or correct specific memories. Shows matches and confirms before acting. |
 | `/memory-health [maintain]` | Show memory system stats (tiers, layers, rules, KG size). With "maintain", runs the full consolidation cycle. |
@@ -665,7 +665,7 @@ Everything lives locally:
 ### Dependencies
 
 - **LanceDB** for the embedded vector database, handles ANN search natively
-- **@huggingface/transformers** for local embedding inference (Xenova/bge-small-en-v1.5 by default, 384 dimensions, ~34MB; swap models with `PRZM_MEMORY_EMBEDDING_MODEL` + `przm-memory-mcp reembed`)
+- **@huggingface/transformers** for local embedding inference (Xenova/bge-small-en-v1.5 by default, 384 dimensions, ~34MB; swap models with `NOMAD_MEMORY_EMBEDDING_MODEL` + `nomad-memory-mcp reembed`)
 - **openai** (optional) for LLM-powered extraction and reranking via OpenRouter
 - **mem0ai** (optional) for Mem0 cloud extraction
 - **@modelcontextprotocol/sdk** for the MCP server protocol
@@ -675,8 +675,8 @@ Everything lives locally:
 Clone, install, fetch the open datasets, run:
 
 ```bash
-git clone https://github.com/OneNomad-LLC/przm-memory.git
-cd przm-memory
+git clone https://github.com/OneNomad-LLC/nomad-memory.git
+cd nomad-memory
 npm install
 bash benchmarks/download-datasets.sh          # LongMemEval S, BEAM, MemoryAgentBench
 bash benchmarks/download-datasets.sh lme-m    # LongMemEval M, 2.7 GB
@@ -698,7 +698,7 @@ ANTHROPIC_API_KEY=... npm run bench:qa -- --benchmark lme-s --mode full-context 
 
 [BENCHMARKS.md](BENCHMARKS.md) has the methodology, every flag, and why LoCoMo is no longer used.
 
-### przm Memory synthetic suite (`bench`)
+### Nomad Memory synthetic suite (`bench`)
 
 A self-contained 15-question battery covering single-fact recall, preferences, temporal reasoning, knowledge updates, and adversarial / distractor resistance. No dataset download. Exits non-zero when R@5 drops below 70%. Its scores move between runs of identical code (R@5 73% to 80%), because search bumps recall counts in the background while later questions run, so treat it as a smoke test.
 
@@ -741,13 +741,13 @@ This plugin contacts exactly two services:
 1. **HuggingFace Hub** for a one-time model download on first run (~34MB for the default bge-small), cached after that
 2. **Mem0 API**, only when `extractionProvider` is `mem0` or `both`
 
-If you set `PRZM_MEMORY_LLM_API_KEY` or `OPENROUTER_API_KEY`, it contacts OpenRouter for LLM features (you pick the model provider); with `PRZM_MEMORY_LLM_BASE_URL` it contacts that endpoint instead, which can be a model on your own machine. Without either, everything runs fully local.
+If you set `NOMAD_MEMORY_LLM_API_KEY` or `OPENROUTER_API_KEY`, it contacts OpenRouter for LLM features (you pick the model provider); with `NOMAD_MEMORY_LLM_BASE_URL` it contacts that endpoint instead, which can be a model on your own machine. Without either, everything runs fully local.
 
 No telemetry. No analytics. No phoning home.
 
 ### Secrets
 
-Every ingest passes through a redaction step before anything is embedded or stored. Credential shapes (provider API keys, GitHub, AWS, Slack, Google and Stripe tokens, JWTs, bearer tokens, private key blocks, `password=`-style assignments and passwords in connection strings) become `[REDACTED]`. Identifiers and placeholders such as `apiKey: string` or `password="your_password"` are left alone, so memories about code stay intact. Extraction drops a candidate memory outright when it would have held a secret. Set `PRZM_MEMORY_REDACT_SECRETS=0` to store raw text.
+Every ingest passes through a redaction step before anything is embedded or stored. Credential shapes (provider API keys, GitHub, AWS, Slack, Google and Stripe tokens, JWTs, bearer tokens, private key blocks, `password=`-style assignments and passwords in connection strings) become `[REDACTED]`. Identifiers and placeholders such as `apiKey: string` or `password="your_password"` are left alone, so memories about code stay intact. Extraction drops a candidate memory outright when it would have held a secret. Set `NOMAD_MEMORY_REDACT_SECRETS=0` to store raw text.
 
 ### Local storage
 
@@ -757,13 +757,13 @@ All memory data stays on disk at `~/.claude/engram/`. Nothing gets sent anywhere
 
 Here are some real situations where this makes a difference.
 
-**Personal AI assistant.** The most obvious one. You talk to an AI every day and it forgets everything between sessions. przm Memory fixes that. It learns your preferences, remembers your projects, picks up your corrections, and builds a picture of who you are over time. Instead of re-explaining yourself every conversation, the agent just knows.
+**Personal AI assistant.** The most obvious one. You talk to an AI every day and it forgets everything between sessions. Nomad Memory fixes that. It learns your preferences, remembers your projects, picks up your corrections, and builds a picture of who you are over time. Instead of re-explaining yourself every conversation, the agent just knows.
 
-**Developer tools.** If you use Claude Code, Cursor, or any AI coding tool, the agent forgets your codebase conventions, your preferred patterns, and the decisions you've already made. przm Memory picks up things like "always use explicit return types" or "we deploy to Vercel, not AWS" and carries them forward. Procedural rules are built for this.
+**Developer tools.** If you use Claude Code, Cursor, or any AI coding tool, the agent forgets your codebase conventions, your preferred patterns, and the decisions you've already made. Nomad Memory picks up things like "always use explicit return types" or "we deploy to Vercel, not AWS" and carries them forward. Procedural rules are built for this.
 
 **Customer support agents.** A support bot that actually remembers a customer's history, past issues, and preferences without needing to query a CRM every time. The knowledge graph handles entity relationships ("Customer X uses Plan Y, started in March") and temporal queries let the agent reason about timelines.
 
-**Research and note-taking.** If you use an AI to research topics over multiple sessions, przm Memory lets it build on previous findings instead of starting from scratch. The diary system logs what happened each session, and the search pipeline surfaces relevant prior research when you come back to a topic.
+**Research and note-taking.** If you use an AI to research topics over multiple sessions, Nomad Memory lets it build on previous findings instead of starting from scratch. The diary system logs what happened each session, and the search pipeline surfaces relevant prior research when you come back to a topic.
 
 **Multi-agent systems.** Multiple agents can share the same memory store. One agent handles research, another handles coding, and they both read from and write to the same LanceDB. The MCP protocol makes this straightforward since any MCP-compatible client can connect to the server.
 
@@ -771,11 +771,11 @@ Here are some real situations where this makes a difference.
 
 ## Pairs Well With: przm Voice (persona)
 
-If przm Memory is the brain, [przm Voice](https://github.com/OneNomad-LLC/przm-voice) (technical handle: `persona`) is the personality.
+If Nomad Memory is the brain, [przm Voice](https://github.com/OneNomad-LLC/przm-voice) (technical handle: `persona`) is the personality.
 
-przm Memory handles *what* the agent remembers: facts, preferences, rules, timelines. przm Voice handles *how* the agent communicates: tone, verbosity, format preferences, and communication style. They solve different problems but work best together.
+Nomad Memory handles *what* the agent remembers: facts, preferences, rules, timelines. przm Voice handles *how* the agent communicates: tone, verbosity, format preferences, and communication style. They solve different problems but work best together.
 
-Here's why the combo matters. przm Memory will learn that you prefer TypeScript over Python. przm Voice will learn that you want short answers with code first and explanation after. przm Memory will store the fact that you got laid off last month. przm Voice will know not to bring that up casually based on the emotional context it picked up.
+Here's why the combo matters. Nomad Memory will learn that you prefer TypeScript over Python. przm Voice will learn that you want short answers with code first and explanation after. Nomad Memory will store the fact that you got laid off last month. przm Voice will know not to bring that up casually based on the emotional context it picked up.
 
 przm Voice tracks behavioral signals (corrections, approvals, frustrations, praise) and builds a communication profile that adapts over time. The procedural rules surface here overlaps a little ("never use em-dashes"), but Voice goes deeper into *how* the agent should talk to you specifically. Things like matching your energy level, knowing when to be terse vs. when to elaborate, and adjusting formality based on the topic.
 

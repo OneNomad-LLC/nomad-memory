@@ -18,7 +18,7 @@
 # (that's where the LLM-distilled facts come from). The hook's job is
 # strictly the compact-time lifeline, not session-long memory hygiene.
 
-DATA_DIR="${NOMAD_MEMORY_DATA_DIR:-${PRZM_MEMORY_DATA_DIR:-${ENGRAM_DATA_DIR:-${SMART_MEMORY_DATA_DIR:-}}}}"
+DATA_DIR="${NOMAD_MEMORY_DATA_DIR:-${NOMAD_MEMORY_DATA_DIR:-${ENGRAM_DATA_DIR:-${SMART_MEMORY_DATA_DIR:-}}}}"
 if [ -z "$DATA_DIR" ]; then  # default; keep a pre-rename przm-memory store if it is the only one
   DATA_DIR="$HOME/.claude/nomad-memory"
   [ -d "$DATA_DIR" ] || [ ! -d "$HOME/.claude/przm-memory" ] || DATA_DIR="$HOME/.claude/przm-memory"
