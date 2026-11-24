@@ -25,6 +25,7 @@ process.env.STORAGE_BACKEND = 'file';
 import Anthropic from '@anthropic-ai/sdk';
 import { embed, getEmbeddingModelName } from '../src/llm.js';
 import { loadConfig } from '../src/config.js';
+import { claudeCliComplete } from '../src/claude-cli.js';
 import { estimateTokens } from '../src/utils.js';
 import { listBeamChats, loadBeamChat, loadMab, mabCorpus, type BeamSize } from './lib/datasets.js';
 import { arg, evaluateCorpus, hardware, type CorpusItem } from './lib/retrieval.js';
@@ -40,6 +41,8 @@ const limit = arg('limit') ? Number(arg('limit')) : undefined;
 const runs = Number(arg('runs') ?? 1);
 const concurrency = Number(arg('concurrency') ?? 4);
 const dryRun = process.argv.includes('--dry-run');
+/** `api`: the Anthropic API (ANTHROPIC_API_KEY). `claude-cli`: the Claude Code CLI signed in here, on its subscription. */
+const provider = (arg('provider') ?? 'api') as 'api' | 'claude-cli';
 /** Leave room for the prompt and the answer inside a 1M-token window. */
 const FULL_CONTEXT_MAX_TOKENS = 900_000;
 
@@ -149,7 +152,7 @@ async function retrieve(tasks: Task[]): Promise<void> {
 
 // ── API calls ────────────────────────────────────────────────────────
 
-const client = dryRun ? null : new Anthropic();
+const client = dryRun || provider === 'claude-cli' ? null : new Anthropic();
 
 function text(msg: Anthropic.Message): string {
   return msg.content.flatMap(b => (b.type === 'text' ? [b.text] : [])).join('').trim();
@@ -158,6 +161,12 @@ function text(msg: Anthropic.Message): string {
 async function answer(t: Task): Promise<{ response: string; inputTokens: number; ms: number; refused: boolean }> {
   const context = mode === 'memory' ? t.context ?? '' : asHistory(t.history);
   const started = performance.now();
+  const ask = `${t.date ? `Current date: ${t.date}\n` : ''}Question: ${t.question}`;
+  if (provider === 'claude-cli') {
+    // The CLI reports no refusal flag and takes no effort setting; input tokens are estimated.
+    const response = await claudeCliComplete(ANSWER_SYSTEM, `History:\n\n${context}\n\n${ask}`, answerModel);
+    return { response: response.trim(), inputTokens: estimateTokens(context), ms: performance.now() - started, refused: false };
+  }
   const msg = await client!.messages.create({
     model: answerModel,
     max_tokens: 16000,
@@ -168,7 +177,7 @@ async function answer(t: Task): Promise<{ response: string; inputTokens: number;
       content: [
         // Cached: in full-context mode every BEAM and MemoryAgentBench question shares its history.
         { type: 'text', text: `History:\n\n${context}`, cache_control: { type: 'ephemeral' } },
-        { type: 'text', text: `${t.date ? `Current date: ${t.date}\n` : ''}Question: ${t.question}` },
+        { type: 'text', text: ask },
       ],
     }],
   });
@@ -182,6 +191,9 @@ async function answer(t: Task): Promise<{ response: string; inputTokens: number;
 }
 
 async function grade(t: Task, response: string): Promise<boolean> {
+  if (provider === 'claude-cli') {
+    return /^\W*yes\b/i.test(await claudeCliComplete('You grade answers. Reply yes or no only.', t.grade(response), graderModel));
+  }
   const msg = await client!.messages.create({
     model: graderModel,
     max_tokens: 16000,
@@ -217,8 +229,8 @@ if (dryRun) {
   console.log(`\nGrader prompt for the first question, with a placeholder response:\n\n${t.grade('<model response>')}`);
   process.exit(0);
 }
-if (!process.env.ANTHROPIC_API_KEY) {
-  console.error('ANTHROPIC_API_KEY is not set. QA grading calls the Anthropic API; set the key, or use --dry-run.');
+if (provider === 'api' && !process.env.ANTHROPIC_API_KEY) {
+  console.error('ANTHROPIC_API_KEY is not set. Set the key, pass --provider claude-cli to use the signed-in Claude Code CLI, or use --dry-run.');
   process.exit(1);
 }
 
@@ -256,7 +268,7 @@ const path = writeBenchmarkResult({
   benchmark: `qa-${benchmark}${benchmark === 'beam' ? `-${arg('size') ?? '100K'}` : ''}-${mode}`,
   durationMs: Math.round(performance.now() - started),
   config: {
-    mode, answerModel, graderModel, answerEffort, graderEffort, runs, questionLimit: limit ?? null,
+    mode, provider, answerModel, graderModel, answerEffort, graderEffort, runs, questionLimit: limit ?? null,
     retrieval: mode === 'memory' ? { topK: 10, embeddingModel: getEmbeddingModelName() } : null,
     prompts: { answerSystem: ANSWER_SYSTEM, grader: Object.fromEntries(Object.entries(GRADER).map(([k, f]) => [k, f.toString()])) },
     hardware: hardware(),

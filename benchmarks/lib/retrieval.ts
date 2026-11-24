@@ -18,9 +18,11 @@ import { tmpdir, cpus, totalmem, platform, release } from 'node:os';
 import { randomUUID } from 'node:crypto';
 import { Storage, type StoredChunk } from '../../src/storage.js';
 import { loadConfig } from '../../src/config.js';
-import { embed, getEmbeddingModelName } from '../../src/llm.js';
+import { getEmbeddingModelName } from '../../src/llm.js';
+import { cachedEmbed, embedCacheDir } from './embed-cache.js';
 import { buildContextPrefix, estimateTokens } from '../../src/utils.js';
 import { search } from '../../src/search.js';
+import { chunkContent } from '../../src/chunker.js';
 import type { SmartMemoryConfig } from '../../src/types.js';
 import { percentiles, writeBenchmarkResult } from './results.js';
 
@@ -64,6 +66,11 @@ export const TOP_K = 10;
 /** Characters of an item that get embedded; bge-small reads at most 512 tokens anyway. */
 export const EMBED_CHARS = 2000;
 const SAVE_BATCH = 256;
+/**
+ * `whole` (default): one stored item per corpus item, its first EMBED_CHARS characters embedded.
+ * `chunked` (`--ingest chunked`): long items are split the way memory-ingest splits them.
+ */
+export const INGEST: 'whole' | 'chunked' = arg('ingest') === 'chunked' ? 'chunked' : 'whole';
 
 export const dedupe = (ids: string[]): string[] => [...new Set(ids)];
 
@@ -124,7 +131,7 @@ export async function evaluateCorpus(
     if (pending.length === 0) return;
     const t = performance.now();
     await storage.saveChunks(pending);
-    const share = (performance.now() - t) / pending.length;
+    const share = (performance.now() - t) / Math.max(pendingEmbedMs.length, 1);
     for (const ms of pendingEmbedMs) writeMs.push(ms + share);
     pending = [];
     pendingEmbedMs = [];
@@ -136,14 +143,26 @@ export async function evaluateCorpus(
     const createdAt = item.createdAt || new Date(0).toISOString();
     const t = performance.now();
     const prefix = buildContextPrefix({ type: 'context', cognitiveLayer: 'episodic', createdAt });
-    const embedding = await embed(config, item.text.slice(0, EMBED_CHARS), prefix);
+    const base = {
+      tier: 'long-term' as const, type: 'context' as const, cognitiveLayer: 'episodic' as const, tags: [], domain: '', topic: '',
+      source: item.source, importance: 0.5, sentiment: 'neutral' as const, createdAt, lastRecalledAt: null, recallCount: 0,
+      relatedMemories: [], recallOutcomes: [],
+    };
+    const split = INGEST === 'chunked' ? chunkContent(item.text) : { chunks: [item.text], needsSplit: false };
+    if (split.needsSplit) {
+      // What memory-ingest does with long content: the whole text as a parent without a
+      // vector, and each piece as a child with one.
+      const parentId = randomUUID();
+      pending.push({ ...base, id: parentId, content: item.text, consolidationLevel: -1 });
+      for (const piece of split.chunks) {
+        const embedding = await cachedEmbed(config, piece, prefix);
+        pending.push({ ...base, id: randomUUID(), content: piece, parentChunkId: parentId, embedding: embedding.length > 0 ? embedding : undefined });
+      }
+    } else {
+      const embedding = await cachedEmbed(config, item.text.slice(0, EMBED_CHARS), prefix);
+      pending.push({ ...base, id: randomUUID(), content: item.text, embedding: embedding.length > 0 ? embedding : undefined });
+    }
     pendingEmbedMs.push(performance.now() - t);
-    pending.push({
-      id: randomUUID(), tier: 'long-term', content: item.text, type: 'context',
-      cognitiveLayer: 'episodic', tags: [], domain: '', topic: '', source: item.source,
-      importance: 0.5, sentiment: 'neutral', createdAt, lastRecalledAt: null, recallCount: 0,
-      embedding: embedding.length > 0 ? embedding : undefined, relatedMemories: [], recallOutcomes: [],
-    });
     if (pending.length >= SAVE_BATCH) await flush();
   }
   await flush();
@@ -155,7 +174,8 @@ export async function evaluateCorpus(
     try {
       results = await Promise.race([
         search(config, storage, q.text, TOP_K, q.referenceDate ? { referenceDate: q.referenceDate } : undefined),
-        new Promise<never>((_, reject) => setTimeout(() => reject(new Error('search timeout')), 60_000)),
+        // unref: a pending timeout must not keep the process alive after the last search.
+        new Promise<never>((_, reject) => setTimeout(() => reject(new Error('search timeout')), 60_000).unref()),
       ]);
     } catch (err) {
       console.error(`  [search failed] ${opts.label ?? ''} ${q.id}: ${err instanceof Error ? err.message : err}`);
@@ -305,7 +325,7 @@ export async function runRetrievalBenchmark(spec: {
   const path = writeBenchmarkResult({
     benchmark: spec.benchmark,
     durationMs: Math.round(performance.now() - started),
-    config: { ...spec.config, embeddingModel: getEmbeddingModelName(), topK: TOP_K, embedChars: EMBED_CHARS, runs: spec.runs, hardware: hardware() },
+    config: { ...spec.config, embeddingModel: getEmbeddingModelName(), topK: TOP_K, embedChars: EMBED_CHARS, runs: spec.runs, hardware: hardware(), embedCache: Boolean(embedCacheDir()), ingest: INGEST },
     results: { ...acrossRuns(runs), ...spec.extra?.(), runs },
     perCategory: byType,
     perQuestion: first.map(o => ({

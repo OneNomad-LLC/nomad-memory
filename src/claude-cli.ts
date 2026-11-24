@@ -62,12 +62,12 @@ export function parseClaudeCliOutput(stdout: string): string {
 // argument here is ours (flags, a model name, a temp path); the prompt itself goes on stdin.
 const winQuote = (arg: string) => (arg === '' ? '""' : /[\s"&|<>^]/.test(arg) ? `"${arg.replace(/"/g, '""')}"` : arg);
 
-export async function claudeCliComplete(systemPrompt: string, userMessage: string): Promise<string> {
+export async function claudeCliComplete(systemPrompt: string, userMessage: string, model: string = claudeCliModel()): Promise<string> {
   const dir = mkdtempSync(join(tmpdir(), 'nomad-memory-cli-'));
   const systemFile = join(dir, 'system.txt');
   writeFileSync(systemFile, systemPrompt, { encoding: 'utf8', mode: 0o600 });
   const command = memEnv('CLAUDE_CLI') ?? 'claude';
-  const args = claudeCliArgs(claudeCliModel(), systemFile);
+  const args = claudeCliArgs(model, systemFile);
   const windows = process.platform === 'win32';
   try {
     return await new Promise<string>((resolve, reject) => {
